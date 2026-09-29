@@ -1557,14 +1557,14 @@ function computeReports(db, options = {}) {
   const expenses = db.expenses.filter((expense) => inRange(expense.date, range.from, range.to));
   const grossSales = orders.reduce((sum, order) => sum + order.subtotal + order.deliveryFee, 0);
   const discounts = orders.reduce((sum, order) => sum + order.discount, 0);
-  const orderRevenue = allActive.reduce((sum, order) => sum + order.total, 0);
+  const orderRevenue = orders.reduce((sum, order) => sum + order.total, 0);
   const allActiveOrderIds = new Set(allActive.map((order) => order.id));
   const paidAmount = db.payments
     .filter((payment) => allActiveOrderIds.has(payment.orderId))
     .reduce((sum, payment) => sum + payment.amount, 0);
   const refundAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0);
-    const remainingBalance = active
-    .filter((order) => {
+    const remainingBalance = orders
+      .filter((order) => {
       const orderNumber = Number(String(order.orderNumber || "").replace("ORD-", ""));
       const excludedGreenOrders = new Set([
         2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,
