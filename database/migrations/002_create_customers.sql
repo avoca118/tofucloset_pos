@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS customers (
+  id VARCHAR(64) NOT NULL,
+  customer_code VARCHAR(64) NOT NULL,
+  name VARCHAR(191) NOT NULL,
+  phone VARCHAR(64) NOT NULL,
+  email VARCHAR(191) NULL,
+  contact VARCHAR(191) NULL,
+  address TEXT NULL,
+  township VARCHAR(191) NULL,
+  delivery_method VARCHAR(64) NULL,
+  notes TEXT NULL,
+  customer_visible_notes TEXT NULL,
+  internal_notes TEXT NULL,
+  tags JSON NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_customers_code (customer_code),
+  KEY idx_customers_phone (phone),
+  KEY idx_customers_email (email),
+  KEY idx_customers_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
