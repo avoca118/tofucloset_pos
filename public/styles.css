@@ -2079,6 +2079,21 @@ td .compact-select {
    Orders Table — Final 7 Column Layout
    ========================================================= */
 
+.orders-mobile-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .orders-desktop-table {
+    display: none;
+  }
+
+  .orders-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+}
+
 .orders-desktop-table {
   width: 100%;
   overflow-x: auto;
