@@ -12,6 +12,7 @@ const state = {
   inventoryPane: localStorage.getItem("tc_inventory_pane") || "products",
   financeTab: localStorage.getItem("tc_finance_tab") || "overview",
   reportPreset: "this-year",
+  reportGenerated: false,
   reportFilters: {
     preset: "this-year",
     from: "",
@@ -473,7 +474,13 @@ function renderDashboard() {
       </div>
       <div class="date-nav" aria-label="Report date">
         <button type="button" data-action="shift-dashboard-date" data-delta="-1" aria-label="Previous day">&lt;</button>
-        <span class="date-label">${esc(formatDisplayDate(selectedDate))}</span>
+        <input
+          id="dashboard-date-picker"
+          class="date-label"
+          type="date"
+          value="${esc(selectedDate)}"
+          aria-label="Select report date"
+        >
         <button type="button" data-action="shift-dashboard-date" data-delta="1" aria-label="Next day">&gt;</button>
       </div>
     </section>
@@ -740,66 +747,334 @@ function renderOrders() {
 
 function ordersTable(orders, compact = false) {
   if (!orders.length) return `<div class="empty-state">No orders yet.</div>`;
-  const rows = orders
+
+    if (compact) {
+    return `
+      <div class="recent-orders-list">
+        ${orders.map((order) => {
+          const customer = customerById(order.customerId);
+          const overdue = isOverdue(order);
+
+          return `
+            <article class="recent-order-item">
+
+              <div class="recent-order-main">
+                <div class="recent-order-heading">
+                  <strong>${esc(order.orderNumber)}</strong>
+
+                  <span class="badge ${classForStatus(order.status)}">
+                    ${esc(order.status)}
+                  </span>
+                </div>
+
+                <div class="recent-order-customer">
+                  ${esc(customer?.name || "Unknown")}
+                </div>
+
+                <div class="muted tiny">
+                  ${esc(order.orderDate)}
+                  ${overdue ? " · Delayed" : ""}
+                </div>
+              </div>
+
+              <div class="recent-order-type">
+                <span class="badge dark">
+                  ${esc(order.orderType)}
+                </span>
+              </div>
+
+              <div class="recent-order-money">
+                <div>
+                  <span>Total</span>
+                  <strong>${money(order.total)}</strong>
+                </div>
+
+                <div>
+                  <span>Remaining Balance</span>
+                  <strong>${money(order.balance)}</strong>
+                </div>
+              </div>
+
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+    const rows = orders
     .map((order) => {
       const customer = customerById(order.customerId);
-      const itemText = order.items.map((item) => `${item.productName} ${item.color}/${item.size} x${item.quantity}`).join(", ");
+      const items = order.items || [];
+
+      const firstItem = items[0];
+
+      const itemPreview = firstItem
+        ? `
+          <div class="order-item-name">
+            ${esc(firstItem.productName)}
+          </div>
+          <div class="muted tiny">
+            ${esc(firstItem.color || "-")} / ${esc(firstItem.size || "-")}
+            ×${firstItem.quantity}
+          </div>
+        `
+        : `<div class="muted">No items</div>`;
+
+      const extraItems =
+        items.length > 1
+          ? `<div class="muted tiny">+ ${items.length - 1} more item${items.length > 2 ? "s" : ""}</div>`
+          : "";
+
       const overdue = isOverdue(order);
-      if (compact) {
-        return `
-          <tr>
-            <td class="nowrap"><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(order.orderDate)}</div>${overdue ? `<span class="badge warn">Delayed</span>` : ""}</td>
-            <td>${esc(customer?.name || "Unknown")}<div class="muted tiny">${esc(customer?.phone || "")}</div></td>
-            <td><span class="badge dark">${esc(order.orderType)}</span></td>
-            <td class="money-stack nowrap"><strong>${money(order.total)}</strong><div class="muted tiny">Bal ${money(order.balance)}</div></td>
-            <td><span class="badge ${classForStatus(order.status)}">${esc(order.status)}</span></td>
-          </tr>
-        `;
-      }
-      const isCompleted = [
-        "Completed",
-        "Delivered"
-      ].includes(order.status);
+
+      const eta =
+        order.expectedArrival ||
+        items
+          .map((item) => item.expectedArrival)
+          .filter(Boolean)
+          .sort()[0] ||
+        "-";
 
       return `
-              <tr class="${isCompleted ? "order-completed" : ""}">
-          <td class="nowrap"><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(order.orderDate)}</div>${overdue ? `<span class="badge warn">Delayed</span>` : ""}</td>
-          <td>${esc(customer?.name || "Unknown")}<div class="muted tiny">${esc(customer?.phone || "")}</div></td>
-          <td class="cell-clip" title="${esc(itemText)}">${esc(itemText)}</td>
-          <td><span class="badge dark">${esc(order.orderType)}</span></td>
-          <td class="nowrap">${money(order.total)}</td>
-          <td>
-            <div class="money-pair">
-              <div><span>Paid</span><strong>${money(order.paid)}</strong></div>
-              <div><span>Balance</span><strong>${money(order.balance)}</strong></div>
+        <tr>
+          <!-- Order -->
+          <td class="order-table-order">
+            <strong>${esc(order.orderNumber)}</strong>
+            <div class="muted tiny">${esc(order.orderDate)}</div>
+            ${overdue ? `<span class="badge warn">Delayed</span>` : ""}
+          </td>
+
+          <!-- Customer -->
+          <td class="order-table-customer">
+            <strong>${esc(customer?.name || "Unknown")}</strong>
+            <div class="muted tiny">${esc(customer?.phone || "")}</div>
+          </td>
+
+          <!-- Items -->
+          <td class="order-table-items">
+            ${itemPreview}
+            ${extraItems}
+          </td>
+
+          <!-- Amount -->
+          <td class="order-table-amount">
+            <div class="amount-line">
+              <span>Total</span>
+              <strong>${money(order.total)}</strong>
+            </div>
+            <div class="amount-line">
+              <span>Paid</span>
+              <strong>${money(order.paid)}</strong>
+            </div>
+            <div class="amount-line">
+              <span>Balance</span>
+              <strong>${money(order.balance)}</strong>
             </div>
           </td>
-          <td class="nowrap">
-            <span class="badge ${classForStatus(order.status)}" title="${esc(order.status)}">${esc(order.status)}</span>
-            <div class="muted tiny">${esc(order.paymentStatus)}</div>
+
+          <!-- Status -->
+          <td class="order-table-status">
+            <span
+              class="badge ${classForStatus(order.status)}"
+              title="${esc(order.status)}"
+            >
+              ${esc(order.status)}
+            </span>
+
+            <div class="muted tiny">
+              ${esc(order.paymentStatus || "")}
+            </div>
           </td>
-          <td class="nowrap">${esc(order.deliveryMethod || "-")}<div class="muted tiny">${esc(order.deliveryStatus || "")}</div></td>
-          <td class="nowrap">${orderActionsCell(order)}</td>
+
+          <!-- Delivery -->
+            <td class="order-table-delivery">
+              <strong>${esc(order.deliveryMethod || "-")}</strong>
+
+              <div class="muted tiny">
+                ${esc(order.deliveryStatus || "")}
+              </div>
+
+              ${
+                eta !== "-"
+                  ? `<div class="muted tiny">ETA ${esc(eta)}</div>`
+                  : ""
+              }
+            </td>
+
+            <!-- Actions -->
+            <td class="order-table-actions">
+              ${orderActionsCell(order)}
+            </td>
         </tr>
       `;
     })
     .join("");
-  return `
-    <div class="table-wrap ${compact ? "embedded" : ""}">
-      <table class="${compact ? "table-finance" : "table-orders"}">
+
+  const desktopTable = `
+    <div class="table-wrap orders-desktop-table">
+      <table class="table-orders">
         <thead>
           <tr>
-            ${compact
-              ? "<th>Order</th><th>Customer</th><th>Type</th><th>Total</th><th>Status</th>"
-              : "<th>Order</th><th>Customer</th><th>Items</th><th>Type</th><th>Total</th><th>Paid / Balance</th><th>Status</th><th>Delivery</th><th>Actions</th>"}
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Deli</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+
+        <tbody>
+          ${rows}
+        </tbody>
       </table>
     </div>
   `;
-}
 
+  if (compact) return desktopTable;
+
+  const mobileCards = orders
+    .map((order) => {
+      const customer = customerById(order.customerId);
+
+      const items = order.items || [];
+
+      const itemPreview = items
+        .slice(0, 2)
+        .map(
+          (item) =>
+            `${esc(item.productName)} ${esc(item.color || "")}/${esc(item.size || "")} ×${item.quantity}`
+        )
+        .join("<br>");
+
+      const extraItems =
+        items.length > 2
+          ? `<div class="muted tiny">+${items.length - 2} more item(s)</div>`
+          : "";
+
+      const cargoBatches = [
+        ...new Set(items.map((item) => item.batchId).filter(Boolean))
+      ].join(", ") || "-";
+
+      const eta =
+        order.expectedArrival ||
+        items
+          .map((item) => item.expectedArrival)
+          .filter(Boolean)
+          .sort()[0] ||
+        "-";
+
+      const overdue = isOverdue(order);
+
+      return `
+        <article class="order-mobile-card">
+
+          <div class="order-mobile-head">
+            <div>
+              <strong class="order-mobile-number">
+                ${esc(order.orderNumber)}
+              </strong>
+              <div class="muted tiny">
+                ${esc(order.orderDate)}
+              </div>
+            </div>
+
+            <div class="order-mobile-status">
+              <span class="badge ${classForStatus(order.status)}">
+                ${esc(order.status)}
+              </span>
+
+              ${
+                overdue
+                  ? `<span class="badge warn">Delayed</span>`
+                  : ""
+              }
+            </div>
+          </div>
+
+          <div class="order-mobile-section">
+            <div class="order-mobile-label">Customer</div>
+
+            <div class="order-mobile-customer">
+              <strong>${esc(customer?.name || "Unknown")}</strong>
+              <span class="muted tiny">
+                ${esc(customer?.phone || "")}
+              </span>
+            </div>
+          </div>
+
+          <div class="order-mobile-section">
+            <div class="order-mobile-label">Items</div>
+
+            <div class="order-mobile-items">
+              ${itemPreview}
+              ${extraItems}
+            </div>
+          </div>
+
+          <div class="order-mobile-section order-mobile-money">
+
+            <div class="order-mobile-money-row">
+              <span>${esc(order.orderType)}</span>
+              <strong>${money(order.total)}</strong>
+            </div>
+
+            <div class="order-mobile-money-row">
+              <span>Paid</span>
+              <strong>${money(order.paid)}</strong>
+            </div>
+
+            <div class="order-mobile-money-row">
+              <span>Balance</span>
+              <strong>${money(order.balance)}</strong>
+            </div>
+
+          </div>
+
+          <div class="order-mobile-section">
+            <div class="order-mobile-label">Delivery</div>
+
+            <div class="order-mobile-delivery">
+              <div>
+                <strong>${esc(order.deliveryMethod || "-")}</strong>
+                <span class="muted tiny">
+                  ${esc(order.deliveryStatus || "")}
+                </span>
+              </div>
+
+              <div class="order-mobile-delivery-meta">
+                <span>
+                  Cargo
+                  <strong>${esc(cargoBatches)}</strong>
+                </span>
+
+                <span>
+                  ETA
+                  <strong>${esc(eta)}</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-mobile-actions">
+            ${orderActionsCell(order)}
+          </div>
+
+        </article>
+      `;
+    })
+    .join("");
+
+  return `
+    ${desktopTable}
+
+    <div class="orders-mobile-list">
+      ${mobileCards}
+    </div>
+  `;
+}
 function orderStatusControls(order) {
   const settings = state.data.settings;
   return `
@@ -1248,7 +1523,7 @@ function renderFinanceOverview() {
   return `
     <section class="metrics-row">
       ${metric("Revenue", money(report.netSales), `${report.range.from} to ${report.range.to}`, "sales")}
-      ${metric("Collected", money(report.totalCollected ?? report.paidAmount), "Cash received", "bag")}
+      ${metric("Collected", money(state.reportGenerated ? (report.totalCollected ?? report.paidAmount) : 0), "Cash received", "bag")}
       ${metric("Remaining", money(report.remainingBalance), "Active balances", "pending")}
       ${metric("Net Profit", money(report.netProfit), "After costs & expenses", "profit")}
     </section>
@@ -1759,18 +2034,22 @@ function openCustomerModal(customer = null) {
 }
 
 function lineItemRow(item = null, orderType = "") {
-  const selectedProduct = item?.productId || state.data.products.find((product) => product.active !== false)?.id || "";
-  const selectedVariant = item?.variantId || productById(selectedProduct)?.variants?.[0]?.id || "";
+  const selectedProduct = item?.productId || "";
+  const selectedVariant = item?.variantId || "";
   return `
     <div class="line-item">
-        ${orderType === "Preorder"
-    ? `
       <label>Product
         <input
           class="line-product-name"
           name="productName"
           value="${esc(item?.productName || productById(selectedProduct)?.name || "")}"
           placeholder="Enter product name"
+        >
+        <input
+          type="hidden"
+          class="line-product-id"
+          name="productId"
+          value="${esc(item?.productId || selectedProduct || "")}"
         >
       </label>
 
@@ -1782,15 +2061,19 @@ function lineItemRow(item = null, orderType = "") {
           placeholder="Size / Color / Variant"
         >
       </label>
-    `
-    : `
-      <label>Product<select class="line-product">${productOptions(selectedProduct)}</select></label>
-      <label>Variant<select class="line-variant" name="variantId">${variantOptions(selectedProduct, selectedVariant)}</select></label>
-    `
-  }
-      <label>Qty<input class="line-qty" type="number" min="1" value="${item?.quantity || 1}"></label>
-      <label>Price<input class="line-price" type="number" min="0" value="${item?.unitPrice || productById(selectedProduct)?.sellingPrice || 0}"></label>
-      <label>Discount<input class="line-discount" type="number" min="0" value="${item?.discount || 0}"></label>
+
+      <label>Qty
+        <input class="line-qty" type="number" min="1" value="${item?.quantity || 1}">
+      </label>
+
+      <label>Price
+        <input class="line-price" type="number" min="0" value="${item?.unitPrice || 0}">
+      </label>
+
+      <label>Discount
+        <input class="line-discount" type="number" min="0" value="${item?.discount || 0}">
+      </label>
+
       <button class="btn small danger" type="button" data-action="remove-line">X</button>
     </div>
   `;
@@ -1807,12 +2090,22 @@ function openOrderModal(order = null) {
     ${order && supplierLocked(order) ? `<div class="alert"><div><strong>Preorder tracking already started</strong><div class="muted tiny">Changing product, size, color, or quantity after preorder progress begins will be recorded in the audit log.</div></div><span class="badge warn">Review</span></div>` : ""}
     <form id="order-form" data-id="${order?.id || ""}" class="grid">
       <div class="grid cols-3">
+      <label>
+        Order Date
+        <input
+          name="orderDate"
+          type="date"
+          value="${esc(order?.orderDate || today())}"
+          required
+        >
+      </label>
         <label>Existing customer<select name="customerId">${customerOptions(order?.customerId || "")}</select></label>
         <label>New customer name<input name="customerName" placeholder="Required if no existing customer"></label>
         <label>New customer phone<input name="customerPhone" placeholder="Required if no existing customer"></label>
-        <label>Contact<input name="customerContact"></label>
-        <label>Township<input name="township"></label>
         <label>Order type<select name="orderType">${["Preorder", "Instock", "Mixed Order"].map((type) => `<option ${order?.orderType === type ? "selected" : ""}>${type}</option>`).join("")}</select></label>
+        <label>Platform<select name="platform">
+          ${["Facebook", "TikTok", "Telegram"].map((platform) => `<option value="${platform}" ${order?.platform === platform ? "selected" : ""}>${platform}</option>`).join("")}
+        </select></label>
       </div>
       <label>Address<textarea name="address"></textarea></label>
       <div>
@@ -1978,7 +2271,7 @@ function openOrderDetails(order) {
       </div>
     </section>
     <div class="panel">
-      <h3>Items</h3>
+      <h3 style="margin-bottom: 10px;">Items</h3>
       <div class="table-wrap"><table class="table-order-items"><thead><tr><th>Product</th><th>Variant</th><th>Total</th><th>Status</th><th>Cargo / ETA</th></tr></thead><tbody>${itemRows}</tbody></table></div>
     </div>
     <section class="grid cols-2">
@@ -1996,7 +2289,7 @@ function openReceipt(order) {
   const customer = customerById(order.customerId);
   const rows = order.items
     .map((item) => `
-      <tr><td>${esc(item.productName)}</td><td>${esc(item.size)}</td><td>${esc(item.color)}</td><td>${item.quantity}</td><td>${money(item.unitPrice)}</td><td>${money(item.discount)}</td><td>${money(item.quantity * item.unitPrice - item.discount)}</td></tr>
+      <tr><td>${esc(item.productName)}</td><td>${esc(item.size)}</td><td>${esc(item.color)}</td><td>${item.quantity}</td><td>${Number(item.unitPrice || 0).toLocaleString()}</td><td>${Number(item.discount || 0).toLocaleString()}</td><td>${money(item.quantity * item.unitPrice - item.discount)}</td></tr>
     `)
     .join("");
   const payments = state.data.payments
@@ -2006,13 +2299,12 @@ function openReceipt(order) {
   showModal(`
     <div class="modal-head no-print">
       <h3>Receipt</h3>
-      <div class="toolbar"><button class="btn small secondary" data-action="print-receipt">Print</button><button class="btn small secondary" data-action="close-modal">Close</button></div>
+      <div class="toolbar"><button class="btn small secondary" data-action="print-receipt">Print</button><button class="btn small secondary" data-action="save-receipt-png" data-id="${order.id}">Save PNG</button><button class="btn small secondary" data-action="close-modal">Close</button></div>
     </div>
     <div class="receipt">
       <div class="split"><div><h2>TOFU'S CLOSET</h2><div class="muted">${esc(state.data.settings.contactInfo)}</div></div><div><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(order.orderDate)}</div></div></div>
       <div class="grid cols-2">
         <div><strong>Customer</strong><div>${esc(customer?.name || "")}</div><div class="muted tiny">${esc(customer?.phone || "")}</div><div class="muted tiny">${esc(customer?.address || "")}</div></div>
-        <div><strong>Delivery</strong><div>${esc(order.deliveryMethod)} · ${esc(order.deliveryStatus)}</div><div class="muted tiny">${esc(order.trackingNumber || "")}</div></div>
       </div>
       <div class="table-wrap"><table><thead><tr><th>Product</th><th>Size</th><th>Color</th><th>Qty</th><th>Price</th><th>Discount</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="grid cols-2">
@@ -2052,11 +2344,25 @@ async function fileToDataUrl(file) {
 function parseOrderItems(form) {
   return [...form.querySelectorAll(".line-item")].map((row) => {
     const productInput = row.querySelector(".line-product-name");
+    const productIdInput = row.querySelector(".line-product-id");
     const variantInput = row.querySelector(".line-variant-name");
 
+    const productName = productInput?.value?.trim() || "";
+
+    // Match typed product name with existing product
+    const matchedProduct = state.data.products.find(
+      (product) =>
+        String(product.name || "").trim().toLowerCase() ===
+        productName.toLowerCase()
+    );
+
+    if (matchedProduct && productIdInput) {
+      productIdInput.value = matchedProduct.id;
+    }
+
     return {
-      productId: row.querySelector(".line-product")?.value || "",
-      productName: productInput?.value?.trim() || "",
+      productId: matchedProduct?.id || productIdInput?.value || "",
+      productName,
       variantId: row.querySelector(".line-variant")?.value || "",
       variantName: variantInput?.value?.trim() || "",
       quantity: Number(row.querySelector(".line-qty").value),
@@ -2194,6 +2500,7 @@ document.addEventListener("submit", async (event) => {
     if (form.id === "report-filters") {
       syncReportFilters(form);
       await refreshReports();
+      state.reportGenerated = true;
       renderShell();
       return;
     }
@@ -2290,6 +2597,7 @@ document.addEventListener("click", async (event) => {
       await refreshReports();
       renderShell();
     }
+
     if (action === "open-product") openProductModal(target.dataset.id ? productById(target.dataset.id) : null);
     if (action === "open-stock") openStockModal(productById(target.dataset.id), target.dataset.variant || "");
     if (action === "open-customer") openCustomerModal(target.dataset.id ? customerById(target.dataset.id) : null);
@@ -2301,11 +2609,38 @@ document.addEventListener("click", async (event) => {
     if (action === "open-return") openReturnModal(orderById(target.dataset.id));
     if (action === "open-receipt") openReceipt(orderById(target.dataset.id));
     if (action === "print-receipt") window.print();
+
+    if (action === "save-receipt-png") {
+      const receipt = document.querySelector("#modal-root .receipt");
+
+      if (!receipt || typeof html2canvas === "undefined") {
+        alert("Receipt image tool is not available.");
+        return;
+      }
+
+      html2canvas(receipt, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true
+      }).then((canvas) => {
+        const link = document.createElement("a");
+        const order = orderById(
+          target.closest("[data-action]")?.dataset.id
+        );
+
+        link.download = `${order?.orderNumber || "receipt"}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
     if (action === "add-line") {
-      document.getElementById("line-items").insertAdjacentHTML("beforeend", lineItemRow());document.getElementById("line-items").insertAdjacentHTML(
-      "beforeend",
-      lineItemRow(null, document.querySelector('#order-form select[name="orderType"]')?.value || "Preorder")
-    );
+      document.getElementById("line-items").insertAdjacentHTML(
+        "beforeend",
+        lineItemRow(
+          null,
+          document.querySelector('#order-form select[name="orderType"]')?.value || "Preorder"
+        )
+      );
     }
     if (action === "remove-line") {
       const rows = [...document.querySelectorAll(".line-item")];
@@ -2363,12 +2698,6 @@ document.addEventListener("click", async (event) => {
 document.addEventListener("change", async (event) => {
   const target = event.target;
   try {
-    if (target.classList.contains("line-product")) {
-      const row = target.closest(".line-item");
-      const product = productById(target.value);
-      row.querySelector(".line-variant").innerHTML = variantOptions(product.id, product.variants[0]?.id);
-      row.querySelector(".line-price").value = product.discountPrice || product.sellingPrice;
-    }
     if (target.name === "deliveryMethod") {
       const note = document.getElementById("delivery-rule-note");
       if (note) {
@@ -2403,6 +2732,21 @@ document.addEventListener("change", async (event) => {
       syncReportFilters(target.form);
       await refreshReports();
       renderShell();
+    }
+    if (target.id === "dashboard-date-picker") {
+
+      const nextDate = target.value;
+
+      if (!nextDate) return;
+
+      state.reportFilters.preset = "custom";
+      state.reportFilters.from = nextDate;
+      state.reportFilters.to = nextDate;
+      state.reportPreset = "custom";
+
+      await refreshReports();
+      renderShell();
+      return;
     }
   } catch (error) {
     showError(error.message);

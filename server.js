@@ -491,10 +491,15 @@ function variantAvailable(variant) {
 
 function orderNumber(db) {
   const numeric = db.orders
-    .map((order) => Number(String(order.orderNumber || "").replace("TC", "")))
+    .map((order) => {
+      const match = String(order.orderNumber || "").match(/^ORD-(\d+)$/i);
+      return match ? Number(match[1]) : NaN;
+    })
     .filter(Number.isFinite);
-  const next = (numeric.length ? Math.max(...numeric) : 1000) + 1;
-  return `TC${next}`;
+
+  const next = (numeric.length ? Math.max(...numeric) : 0) + 1;
+
+  return `ORD-${String(next).padStart(4, "0")}`;
 }
 
 function paymentStatusFor(db, order, financials) {
@@ -573,16 +578,56 @@ function refreshAllOrders(db) {
 }
 
 function normalizeOrderItem(db, item) {
+  const orderType = item.orderType || "Preorder";
+  const quantity = toInt(item.quantity);
+
+  assertRule(quantity > 0, "Quantity must be greater than zero");
+
+  const unitPrice = toInt(item.unitPrice);
+  const discount = toInt(item.discount);
+
+  assertRule(unitPrice >= 0, "Price cannot be negative");
+  assertRule(discount >= 0, "Discount cannot be negative");
+
+  // PREORDER
+  if (orderType === "Preorder") {
+    const product = item.productId
+      ? findProduct(db, item.productId)
+      : null;
+
+    return {
+      id: item.id || createId("item"),
+      productId: product?.id || item.productId || "",
+      variantId: "",
+      sku: product?.sku || "",
+      productName: String(item.productName || product?.name || "").trim(),
+      color: "",
+      size: String(item.variantName || "").trim(),
+      variantName: String(item.variantName || "").trim(),
+      quantity,
+      unitPrice,
+      discount,
+      purchaseCost: toInt(item.purchaseCost || product?.purchaseCost || 0),
+      cargoCost: toInt(item.cargoCost ?? product?.defaultCargoCost ?? 0),
+      supplierStatus: item.supplierStatus || "Pending",
+      cargoStatus: item.cargoStatus || "Waiting",
+      arrivalStatus: item.arrivalStatus || "Waiting",
+      expectedArrival: item.expectedArrival || expectedArrivalDate(
+        item.orderDate || dateKey(),
+        item.waitingTime || db.settings.defaultWaitingTime
+      ),
+      batchId: item.batchId || "",
+      customerNotified: item.customerNotified === true
+    };
+  }
+
+  // NORMAL / STOCK ORDER
   const found = findVariant(db, item.variantId);
+
   assertRule(found, "Product variant not found");
   assertRule(found.product.active !== false, "Product is inactive");
   assertRule(found.variant.active !== false, "Product variant is inactive");
-  const quantity = toInt(item.quantity);
-  assertRule(quantity > 0, "Quantity must be greater than zero");
-  const unitPrice = toInt(item.unitPrice || found.product.discountPrice || found.product.sellingPrice);
-  const discount = toInt(item.discount);
-  assertRule(unitPrice >= 0, "Price cannot be negative");
-  assertRule(discount >= 0, "Discount cannot be negative");
+
   return {
     id: item.id || createId("item"),
     productId: found.product.id,
@@ -591,15 +636,19 @@ function normalizeOrderItem(db, item) {
     productName: found.product.name,
     color: found.variant.color,
     size: found.variant.size,
+    variantName: `${found.variant.color} / ${found.variant.size}`,
     quantity,
-    unitPrice,
+    unitPrice: unitPrice || found.product.discountPrice || found.product.sellingPrice,
     discount,
     purchaseCost: toInt(item.purchaseCost || found.product.purchaseCost),
     cargoCost: toInt(item.cargoCost ?? found.product.defaultCargoCost),
     supplierStatus: item.supplierStatus || "Pending",
     cargoStatus: item.cargoStatus || "Waiting",
     arrivalStatus: item.arrivalStatus || "Waiting",
-    expectedArrival: item.expectedArrival || expectedArrivalDate(item.orderDate || dateKey(), found.product.defaultWaitingTime || db.settings.defaultWaitingTime),
+    expectedArrival: item.expectedArrival || expectedArrivalDate(
+      item.orderDate || dateKey(),
+      item.waitingTime || db.settings.defaultWaitingTime
+    ),
     batchId: item.batchId || "",
     customerNotified: item.customerNotified === true
   };
@@ -612,29 +661,61 @@ function canReserveProduct(product, variant, quantity) {
 
 function validateItemsCanReserve(db, items, replacingOrder = null) {
   const oldReserved = new Map();
+
   if (replacingOrder?.stockState === "reserved") {
     for (const item of replacingOrder.items) {
-      oldReserved.set(item.variantId, (oldReserved.get(item.variantId) || 0) + item.quantity);
+      if (!item.variantId) continue;
+
+      oldReserved.set(
+        item.variantId,
+        (oldReserved.get(item.variantId) || 0) + item.quantity
+      );
     }
   }
+
   const requested = new Map();
+
   for (const item of items) {
-    requested.set(item.variantId, (requested.get(item.variantId) || 0) + item.quantity);
+    // Preorder items do not use inventory variants
+    if (!item.variantId) continue;
+
+    requested.set(
+      item.variantId,
+      (requested.get(item.variantId) || 0) + item.quantity
+    );
   }
+
   for (const [variantId, quantity] of requested.entries()) {
     const found = findVariant(db, variantId);
+
     assertRule(found, "Product variant not found");
-    if (["Preorder", "Both"].includes(found.product.productType)) continue;
-    const availableWithCurrentOrder = variantAvailable(found.variant) + (oldReserved.get(variantId) || 0);
-    assertRule(availableWithCurrentOrder >= quantity, `${found.product.name} ${found.variant.color}/${found.variant.size} does not have enough available stock`);
+
+    if (["Preorder", "Both"].includes(found.product.productType)) {
+      continue;
+    }
+
+    const availableWithCurrentOrder =
+      variantAvailable(found.variant) +
+      (oldReserved.get(variantId) || 0);
+
+    assertRule(
+      availableWithCurrentOrder >= quantity,
+      `${found.product.name} ${found.variant.color}/${found.variant.size} does not have enough available stock`
+    );
   }
 }
 
 function reserveOrderItems(db, order, user, note = "Reserved for order") {
   validateItemsCanReserve(db, order.items);
+
   for (const item of order.items) {
+    if (!item.variantId) continue;
+
     const found = findVariant(db, item.variantId);
+    if (!found) continue;
+
     found.variant.reserved += item.quantity;
+
     addInventoryTransaction(db, user, {
       variantId: item.variantId,
       quantity: item.quantity,
@@ -643,6 +724,7 @@ function reserveOrderItems(db, order, user, note = "Reserved for order") {
       note
     });
   }
+
   order.stockState = "reserved";
 }
 
@@ -737,9 +819,18 @@ function createOrder(db, input, user) {
   assertRule(customer, "Customer is required");
   assertRule(Array.isArray(input.items) && input.items.length > 0, "At least one order item is required");
   const orderDate = input.orderDate || dateKey();
-  const items = input.items.map((item) => normalizeOrderItem(db, { ...item, orderDate }));
-  const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const waitingTime = input.waitingTime || db.settings.defaultWaitingTime;
+
+  const items = input.items.map((item) =>
+    normalizeOrderItem(db, {
+      ...item,
+      orderDate,
+      orderType: input.orderType || "Preorder",
+      waitingTime
+    })
+  );
+
+  const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
   for (const item of items) {
     if (!item.expectedArrival) item.expectedArrival = expectedArrivalDate(orderDate, waitingTime);
   }
@@ -817,7 +908,14 @@ function updateOrder(db, orderId, input, user) {
   }
   if (Array.isArray(input.items)) {
     assertRule(input.items.length > 0, "At least one order item is required");
-    const nextItems = input.items.map((item) => normalizeOrderItem(db, item));
+    const nextItems = input.items.map((item) =>
+      normalizeOrderItem(db, {
+        ...item,
+        orderType: input.orderType || order.orderType || "Preorder",
+        orderDate: order.orderDate,
+        waitingTime: order.waitingTime
+      })
+    );
     validateItemsCanReserve(db, nextItems, order);
     releaseOrderReservations(db, order, user, "Order edited");
     order.items = nextItems;
@@ -825,6 +923,7 @@ function updateOrder(db, orderId, input, user) {
   }
 
   const editable = [
+    "orderDate",
     "orderType",
     "status",
     "preorderStatus",
@@ -897,9 +996,16 @@ function addPayment(db, orderId, input, user) {
   };
   db.payments.unshift(payment);
   refreshOrder(db, order);
-  if (order.orderType !== "Instock" && order.preorderStatus === "Pending Confirmation" && order.paid >= order.requiredDeposit) {
+  if (
+    order.orderType !== "Instock" &&
+    order.preorderStatus === "Pending Confirmation" &&
+    order.paid >= order.requiredDeposit
+  ) {
     order.preorderStatus = "Deposit Paid";
     order.status = "Deposit Paid";
+
+    // Order is confirmed when the required deposit is received.
+    order.orderDate = payment.paymentDate;
   }
   if (order.balance === 0 && order.preorderStatus === "Customer Balance Pending") {
     order.preorderStatus = "Ready for Customer";

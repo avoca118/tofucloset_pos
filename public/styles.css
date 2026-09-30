@@ -668,11 +668,21 @@ a {
 
 .date-nav .date-label {
   min-width: 128px;
-  padding: 0 10px;
+  padding: 6px 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
   text-align: center;
+  font-family: inherit;
   font-size: 0.88rem;
   font-weight: 650;
   color: var(--ink);
+  cursor: pointer;
+}
+
+.date-nav .date-label::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.8;
 }
 
 /* ——— Layout grids ——— */
@@ -908,54 +918,7 @@ a {
   min-width: 1080px;
 }
 
-.table-orders {
-  min-width: 1280px;
-}
 
-.table-orders th:nth-child(1),
-.table-orders td:nth-child(1) {
-  min-width: 130px;
-}
-
-.table-orders th:nth-child(2),
-.table-orders td:nth-child(2) {
-  min-width: 150px;
-}
-
-.table-orders th:nth-child(3),
-.table-orders td:nth-child(3) {
-  min-width: 180px;
-}
-
-.table-orders th:nth-child(4),
-.table-orders td:nth-child(4) {
-  min-width: 110px;
-}
-
-.table-orders th:nth-child(5),
-.table-orders td:nth-child(5) {
-  min-width: 110px;
-}
-
-.table-orders th:nth-child(6),
-.table-orders td:nth-child(6) {
-  min-width: 140px;
-}
-
-.table-orders th:nth-child(7),
-.table-orders td:nth-child(7) {
-  min-width: 170px;
-}
-
-.table-orders th:nth-child(8),
-.table-orders td:nth-child(8) {
-  min-width: 130px;
-}
-
-.table-orders th:nth-child(9),
-.table-orders td:nth-child(9) {
-  min-width: 150px;
-}
 
 .table-customers {
   min-width: 980px;
@@ -1303,6 +1266,53 @@ tbody tr:hover td {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
+}
+
+/* Modal detail spacing */
+.modal-card > .grid {
+  margin-bottom: 18px;
+}
+
+.modal-card > .grid + .grid {
+  margin-top: 18px;
+}
+
+.modal-card > .panel {
+  margin-top: 18px;
+}
+
+.modal-card > .grid .panel {
+  margin-top: 0;
+}
+
+.modal-card > .grid .metric {
+  margin: 0;
+}
+
+.modal-card > .grid.cols-2 {
+  row-gap: 18px;
+  column-gap: 18px;
+}
+
+/* Space between Items and History sections */
+.modal-card > .panel + .grid {
+  margin-top: 20px;
+}
+
+.modal-card > .grid.cols-2 + .grid.cols-2 {
+  margin-top: 20px;
+}
+
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.order-actions .btn,
+.order-actions .more-select {
+  width: 100%;
 }
 
 .status-cell {
@@ -1792,26 +1802,485 @@ td .compact-select {
   .date-nav {
     align-self: flex-start;
   }
+
+  .table-orders {
+  table-layout: auto;
+  min-width: 1280px;
+}
+
+.table-orders th,
+.table-orders td {
+  white-space: nowrap;
+}
 }
 
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: auto;
+    margin: 10mm;
   }
 
-  .receipt,
-  .receipt * {
-    visibility: visible;
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
-  .receipt {
-    position: fixed;
-    inset: 0;
-    box-shadow: none;
-    border: 0;
+  body > * {
+    display: none !important;
+  }
+
+  #modal-root {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #modal-root .modal-backdrop {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  #modal-root .modal-card {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  #modal-root .modal-card > *:not(.receipt) {
+    display: none !important;
+  }
+
+  #modal-root .receipt {
+    display: grid !important;
+    gap: 14px !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: #fff !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Payments LEFT / Summary RIGHT */
+  #modal-root .receipt .grid.cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* Product table */
+  #modal-root .receipt .table-wrap {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  #modal-root .receipt table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+    border-collapse: collapse !important;
+    font-size: 14px !important;
+  }
+
+  #modal-root .receipt table th,
+  #modal-root .receipt table td {
+    padding: 7px 8px !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+  }
+
+  /* Product column wider */
+  #modal-root .receipt table th:first-child,
+  #modal-root .receipt table td:first-child {
+    width: 42% !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  #modal-root .receipt table th:nth-child(2),
+  #modal-root .receipt table td:nth-child(2) {
+    width: 8% !important;
+  }
+
+  #modal-root .receipt table th:nth-child(3),
+  #modal-root .receipt table td:nth-child(3) {
+    width: 8% !important;
+  }
+
+  #modal-root .receipt table th:nth-child(4),
+  #modal-root .receipt table td:nth-child(4) {
+    width: 6% !important;
+  }
+
+  #modal-root .receipt table th:nth-child(5),
+  #modal-root .receipt table td:nth-child(5),
+  #modal-root .receipt table th:nth-child(6),
+  #modal-root .receipt table td:nth-child(6),
+  #modal-root .receipt table th:nth-child(7),
+  #modal-root .receipt table td:nth-child(7) {
+    width: auto !important;
+  }
+
+    /* Summary table */
+  #modal-root .receipt .table-wrap:last-child table {
+    font-size: 14px !important;
+  }
+
+  #modal-root .receipt .table-wrap:last-child th,
+  #modal-root .receipt .table-wrap:last-child td {
+    padding: 6px 8px !important;
+  }
+
+  #modal-root .receipt tr,
+  #modal-root .receipt td,
+  #modal-root .receipt th,
+  #modal-root .receipt .grid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .no-print {
     display: none !important;
   }
 }
+
+.delivery-rule + .grid {
+  margin-top: 18px;
+  margin-top: 18px;
+}
+
+/* Recent Orders */
+.recent-orders-list {
+  display: grid;
+  gap: 0;
+}
+
+.recent-order-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) 120px minmax(220px, auto);
+  align-items: center;
+  gap: 18px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.recent-order-item:last-child {
+  border-bottom: 0;
+}
+
+.recent-order-main {
+  min-width: 0;
+}
+
+.recent-order-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.recent-order-heading strong {
+  font-size: 0.95rem;
+}
+
+.recent-order-customer {
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.recent-order-type {
+  justify-self: start;
+}
+
+.recent-order-money {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(100px, 1fr));
+  gap: 24px;
+  text-align: right;
+}
+
+.recent-order-money > div {
+  display: grid;
+  gap: 3px;
+}
+
+.recent-order-money span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.recent-order-money strong {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .recent-order-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .recent-order-type {
+    justify-self: end;
+  }
+
+  .recent-order-money {
+    grid-column: 1 / -1;
+    text-align: left;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 4px;
+  }
+}
+
+@media (max-width: 680px) {
+  .recent-order-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .recent-order-type {
+    justify-self: start;
+  }
+
+  .recent-order-money {
+    grid-column: auto;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =========================================================
+   Orders Table — Final 7 Column Layout
+   ========================================================= */
+
+.orders-desktop-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-orders {
+  width: 100%;
+  min-width: 980px;
+  table-layout: fixed;
+}
+
+/* Order 14% | Customer 15% | Items 25%
+   Amount 16% | Status 12% | Deli 10% | Actions 8% */
+
+.table-orders th:nth-child(1),
+.table-orders td:nth-child(1) {
+  width: 14%;
+}
+
+.table-orders th:nth-child(2),
+.table-orders td:nth-child(2) {
+  width: 15%;
+}
+
+.table-orders th:nth-child(3),
+.table-orders td:nth-child(3) {
+  width: 23%;
+}
+
+.table-orders th:nth-child(4),
+.table-orders td:nth-child(4) {
+  width: 18%;
+}
+
+.table-orders th:nth-child(5),
+.table-orders td:nth-child(5) {
+  width: 12%;
+}
+
+.table-orders th:nth-child(6),
+.table-orders td:nth-child(6) {
+  width: 10%;
+}
+
+.table-orders th:nth-child(7),
+.table-orders td:nth-child(7) {
+  width: 8%;
+}
+
+/* General */
+.table-orders th,
+.table-orders td {
+  vertical-align: middle;
+}
+
+.table-orders td {
+  overflow: hidden;
+}
+
+/* Order */
+.order-table-order strong {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.order-table-order .tiny {
+  margin-top: 3px;
+}
+
+/* Customer */
+.order-table-customer strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Items */
+.order-table-items {
+  min-width: 0;
+}
+
+.order-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 620;
+}
+
+.order-table-items .tiny {
+  margin-top: 3px;
+}
+
+/* Amount */
+.order-table-amount {
+  white-space: nowrap;
+}
+
+.order-table-amount > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.order-table-amount span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.order-table-amount strong {
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.order-table-amount > div:first-child strong {
+  font-size: 0.88rem;
+}
+
+/* Status */
+.order-table-status {
+  text-align: center;
+}
+
+.order-table-status .badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.order-table-status .tiny {
+  display: block;
+  margin-top: 5px;
+}
+
+/* Deli */
+.order-table-delivery {
+  min-width: 0;
+}
+
+.order-table-delivery strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.order-table-delivery .tiny {
+  display: block;
+  margin-top: 3px;
+}
+
+/* Actions */
+.order-table-actions {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.order-table-actions .order-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.order-table-actions .order-actions .btn,
+.order-table-actions .order-actions .more-select {
+  width: 100%;
+  min-width: 0;
+  height: 31px;
+  box-sizing: border-box;
+}
+
+.order-table-actions .order-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+.order-table-actions .order-actions .more-select {
+  padding: 0 4px;
+  text-align: center;
+  text-align-last: center;
+}
+
+/* Row hover */
+.table-orders tbody tr {
+  transition: background 0.15s ease;
+}
+
+.table-orders tbody tr:hover {
+  background: var(--surface-2);
+}
+
+
+
