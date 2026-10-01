@@ -843,7 +843,7 @@ function ordersTable(orders, compact = false) {
           <!-- Order -->
           <td class="order-table-order">
             <strong>${esc(order.orderNumber)}</strong>
-            <div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div><div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div>
+            <div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div>
             ${overdue ? `<span class="badge warn">Delayed</span>` : ""}
           </td>
 
@@ -899,7 +899,7 @@ function ordersTable(orders, compact = false) {
 
               ${
                 eta !== "-"
-                  ? `<div class="muted tiny">ETA ${esc(eta)}</div>`
+                  ? `<div class="muted tiny">ETA ${esc(displayDateOnly(eta))}</div>`
                   : ""
               }
             </td>
