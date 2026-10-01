@@ -948,12 +948,22 @@ a {
 
 .table-customers th:nth-child(7),
 .table-customers td:nth-child(7) {
-  min-width: 100px;
-  width: 100px;
+  min-width: 120px;
+  width: 120px;
+  text-align: center;
+  white-space: nowrap;
   position: sticky;
   right: 0;
   background: #fff;
   z-index: 2;
+} 
+
+.table-customers td:nth-child(7) .customer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
 }
 
 .table-customers th:nth-child(7) {
