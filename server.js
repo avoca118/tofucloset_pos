@@ -520,9 +520,16 @@ function calculateOrderFinancials(db, order) {
   const deliveryFee = toInt(order.deliveryFee);
   const total = productTotal + deliveryFee;
   const payments = db.payments.filter((payment) => payment.orderId === order.id);
+
+  if (order.orderNumber === "ORD-0097") {
+    console.log("=== DEBUG ORD-0097 ===");
+    console.log("ORDER ID:", order.id);
+    console.log("ALL PAYMENTS:", db.payments.filter((p) => String(p.orderId).includes("order_28f81dbe23cc")));
+    console.log("MATCHED PAYMENTS:", payments);
+  }
   const refunds = db.refunds.filter((refund) => refund.orderId === order.id);
-  const paid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const refunded = refunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const paid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const refunded = refunds.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
   const finalPaidAmount = Math.max(paid - refunded, 0);
   const balance = Math.max(total - finalPaidAmount, 0);
   const productCost = items.reduce(

@@ -448,7 +448,9 @@ function renderView() {
 function renderDashboard() {
   const report = state.data.reports;
   const selectedDate = selectedReportDate();
-  const recentOrders = state.data.orders.slice(0, 8);
+  const recentOrders = [...state.data.orders]
+  .sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0))
+  .slice(0, 8);
   const pendingPayments = activeOrders().filter((order) => order.balance > 0).slice(0, 6);
   const lowStock = report.lowStock || [];
   const statusEntries = Object.entries(report.statusCounts || {}).filter(([, count]) => count > 0);
@@ -2285,6 +2287,11 @@ function openOrderDetails(order) {
   `);
 }
 
+function displayDateOnly(value) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+}
+
 function openReceipt(order) {
   const customer = customerById(order.customerId);
   const rows = order.items
@@ -2302,7 +2309,7 @@ function openReceipt(order) {
       <div class="toolbar"><button class="btn small secondary" data-action="print-receipt">Print</button><button class="btn small secondary" data-action="save-receipt-png" data-id="${order.id}">Save PNG</button><button class="btn small secondary" data-action="close-modal">Close</button></div>
     </div>
     <div class="receipt">
-      <div class="split"><div><h2>TOFU'S CLOSET</h2><div class="muted">${esc(state.data.settings.contactInfo)}</div></div><div><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(order.orderDate)}</div></div></div>
+      <div class="split"><div><h2>TOFU'S CLOSET</h2><div class="muted">${esc(state.data.settings.contactInfo)}</div></div><div><strong>${esc(order.orderNumber)}</strong><<div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div></div></div>
       <div class="grid cols-2">
         <div><strong>Customer</strong><div>${esc(customer?.name || "")}</div><div class="muted tiny">${esc(customer?.phone || "")}</div><div class="muted tiny">${esc(customer?.address || "")}</div></div>
       </div>

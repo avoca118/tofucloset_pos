@@ -949,6 +949,15 @@ a {
 .table-customers th:nth-child(7),
 .table-customers td:nth-child(7) {
   min-width: 100px;
+  width: 100px;
+  position: sticky;
+  right: 0;
+  background: #fff;
+  z-index: 2;
+}
+
+.table-customers th:nth-child(7) {
+  z-index: 3;
 }
 
 .table-cargo {
