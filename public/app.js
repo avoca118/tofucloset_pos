@@ -896,12 +896,6 @@ function ordersTable(orders, compact = false) {
               <div class="muted tiny">
                 ${esc(order.deliveryStatus || "")}
               </div>
-
-              ${
-                eta !== "-"
-                  ? `<div class="muted tiny">ETA ${esc(displayDateOnly(eta))}</div>`
-                  : ""
-              }
             </td>
 
             <!-- Actions -->
