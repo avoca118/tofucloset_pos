@@ -521,12 +521,6 @@ function calculateOrderFinancials(db, order) {
   const total = productTotal + deliveryFee;
   const payments = db.payments.filter((payment) => payment.orderId === order.id);
 
-  if (order.orderNumber === "ORD-0097") {
-    console.log("=== DEBUG ORD-0097 ===");
-    console.log("ORDER ID:", order.id);
-    console.log("ALL PAYMENTS:", db.payments.filter((p) => String(p.orderId).includes("order_28f81dbe23cc")));
-    console.log("MATCHED PAYMENTS:", payments);
-  }
   const refunds = db.refunds.filter((refund) => refund.orderId === order.id);
   const paid = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const refunded = refunds.reduce((sum, refund) => sum + Number(refund.amount || 0), 0);
@@ -604,8 +598,8 @@ function normalizeOrderItem(db, item) {
 
     return {
       id: item.id || createId("item"),
-      productId: product?.id || item.productId || "",
-      variantId: "",
+      productId: product?.id || item.productId || null,
+      variantId: item.variantId || null,
       sku: product?.sku || "",
       productName: String(item.productName || product?.name || "").trim(),
       color: "",
@@ -2316,9 +2310,11 @@ async function ensureDb() {
 }
 
 function saveDb(db) {
-  // PostgreSQL migration: writes are temporarily disabled
-  // until postgres-store.saveDb() is fully verified.
-  return Promise.resolve();
+  persistQueue = persistQueue
+    .catch(() => {})
+    .then(() => mysqlStore.saveDb(db));
+
+  return persistQueue;
 }
 
 function sendJson(res, status, payload) {
