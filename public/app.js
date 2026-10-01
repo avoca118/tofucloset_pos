@@ -774,7 +774,7 @@ function ordersTable(orders, compact = false) {
                 </div>
 
                 <div class="muted tiny">
-                  ${esc(order.orderDate)}
+                  ${esc(displayDateOnly(order.orderDate))}
                   ${overdue ? " · Delayed" : ""}
                 </div>
               </div>
@@ -843,7 +843,7 @@ function ordersTable(orders, compact = false) {
           <!-- Order -->
           <td class="order-table-order">
             <strong>${esc(order.orderNumber)}</strong>
-            <div class="muted tiny">${esc(order.orderDate)}</div>
+            <div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div><div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div>
             ${overdue ? `<span class="badge warn">Delayed</span>` : ""}
           </td>
 
@@ -979,7 +979,7 @@ function ordersTable(orders, compact = false) {
                 ${esc(order.orderNumber)}
               </strong>
               <div class="muted tiny">
-                ${esc(order.orderDate)}
+                ${esc(displayDateOnly(order.orderDate))}
               </div>
             </div>
 
@@ -1257,7 +1257,7 @@ function renderPreorderTracker(typeFilter = "all") {
     .filter((row) => state.preorderFilter === "all" || row.bucket === state.preorderFilter)
     .map(({ order, item, customer, bucket }) => `
       <tr>
-        <td class="nowrap"><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(order.orderDate)} · ${esc(customer?.name || "")}</div>${bucket === "overdue" ? `<span class="badge warn">Delayed</span>` : ""}</td>
+        <td class="nowrap"><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(displayDateOnly(order.orderDate))} · ${esc(customer?.name || "")}</div>${bucket === "overdue" ? `<span class="badge warn">Delayed</span>` : ""}</td>
         <td>${esc(item.productName)}<div class="muted tiny">${esc(item.size)} / ${esc(item.color)} · Qty ${item.quantity}</div></td>
         <td class="nowrap">
           <span class="badge ${classForStatus(item.arrivalStatus || order.preorderStatus || order.status)}">${esc(item.arrivalStatus || order.preorderStatus || order.status)}</span>
@@ -1657,7 +1657,7 @@ function renderFinancePayments() {
   const paymentRows = state.data.payments
     .slice(0, 25)
     .map((payment) => `
-      <tr><td>${esc(orderById(payment.orderId)?.orderNumber || "")}</td><td>${esc(customerById(payment.customerId)?.name || "")}</td><td>${money(payment.amount)}</td><td>${esc(payment.method)}</td><td>${esc(payment.paymentDate)}</td><td>${esc(payment.receivedByName)}</td></tr>
+      <tr><td>${esc(orderById(payment.orderId)?.orderNumber || "")}</td><td>${esc(customerById(payment.customerId)?.name || "")}</td><td>${money(payment.amount)}</td><td>${esc(payment.method)}</td><td>${esc(String(payment.paymentDate || "").slice(0, 10))}</td><td>${esc(payment.receivedByName)}</td></tr>
     `)
     .join("");
   const refundRows = state.data.refunds
@@ -1992,7 +1992,7 @@ function openCustomerModal(customer = null) {
   const history = orders
     .map((order) => `
       <tr>
-        <td>${esc(order.orderNumber)}<div class="muted tiny">${esc(order.orderDate)}</div></td>
+        <td>${esc(order.orderNumber)}<div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div></td>
         <td>${esc(order.orderType)}<div class="muted tiny">${esc(order.status)}</div></td>
         <td>${money(order.total)}<div class="muted tiny">Remaining ${money(order.balance)}</div></td>
         <td><button class="btn small secondary" type="button" data-action="open-order-details" data-id="${order.id}">Open</button></td>
@@ -2207,12 +2207,12 @@ function openOrderDetails(order) {
         <td>${esc(item.size)} / ${esc(item.color)}<div class="muted tiny">Qty ${item.quantity}</div></td>
         <td>${money(item.quantity * item.unitPrice - item.discount)}<div class="muted tiny">Discount ${money(item.discount)}</div></td>
         <td><span class="badge ${classForStatus(item.arrivalStatus)}">${esc(item.arrivalStatus || "Waiting")}</span><div class="muted tiny">Cargo ${esc(item.cargoStatus || "Waiting")}</div></td>
-        <td>${esc(item.batchId || order.batchId || "-")}<div class="muted tiny">Expected ${esc(item.expectedArrival || order.expectedArrival || "-")}</div></td>
+        <td>${esc(item.batchId || order.batchId || "-")}<div class="muted tiny">Expected ${esc(displayDateOnly(item.expectedArrival || order.expectedArrival || ""))}</div></td>
       </tr>
     `)
     .join("");
   const payments = orderPayments(order.id)
-    .map((payment) => `<div class="timeline-item"><strong>${esc(payment.paymentDate)} · Payment · ${money(payment.amount)}</strong><div class="muted tiny">${esc(payment.method)} · ${esc(payment.note || "")}</div></div>`)
+    .map((payment) => `<div class="timeline-item"><strong>${esc(String(payment.paymentDate || "").slice(0, 10))} · Payment · ${money(payment.amount)}</strong><div class="muted tiny">${esc(payment.method)} · ${esc(payment.note || "")}</div></div>`)
     .join("");
   const refunds = orderRefunds(order.id)
     .map((refund) => `<div class="timeline-item"><strong>${esc(refund.refundDate)} · Refund · ${money(refund.amount)}</strong><div class="muted tiny">${esc(refund.method)} · ${esc(refund.reason || "")}</div></div>`)
@@ -2223,7 +2223,7 @@ function openOrderDetails(order) {
   const deliveryNote = deliveryPaymentNote(order.deliveryMethod);
   showModal(`
     <div class="modal-head">
-      <div><h3>${esc(order.orderNumber)}</h3><p class="muted tiny">${esc(order.orderType)} · ${esc(order.orderDate)} · Expected ${esc(order.expectedArrival || "-")}</p></div>
+      <div><h3>${esc(order.orderNumber)}</h3><p class="muted tiny">${esc(order.orderType)} · ${esc(displayDateOnly(order.orderDate))} · Expected ${esc(displayDateOnly(order.expectedArrival || ""))}</p></div>
       <div class="toolbar">
         <button class="btn small secondary" data-action="open-order" data-id="${order.id}">Edit</button>
         <button class="btn small secondary" data-action="open-payment" data-id="${order.id}">Payment</button>
@@ -2264,7 +2264,7 @@ function openOrderDetails(order) {
       <div class="panel">
         <h3>Cargo</h3>
         <p><strong>${esc(order.batchId || "Unassigned")}</strong></p>
-        <p class="muted">Expected arrival ${esc(order.expectedArrival || "-")}</p>
+        <p class="muted">Expected arrival ${esc(displayDateOnly(order.expectedArrival || ""))}</p>
       </div>
       <div class="panel">
         <h3>Delivery</h3>
@@ -2301,7 +2301,7 @@ function openReceipt(order) {
     .join("");
   const payments = state.data.payments
     .filter((payment) => payment.orderId === order.id)
-    .map((payment) => `<div>${esc(payment.paymentDate)} · ${esc(payment.method)} · ${money(payment.amount)}</div>`)
+    .map((payment) => `<div>${esc(String(payment.paymentDate || "").slice(0, 10))} · ${esc(payment.method)} · ${money(payment.amount)}</div>`)
     .join("");
   showModal(`
     <div class="modal-head no-print">
