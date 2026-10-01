@@ -449,7 +449,7 @@ function renderDashboard() {
   const report = state.data.reports;
   const selectedDate = selectedReportDate();
   const recentOrders = [...state.data.orders]
-  .sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0))
+  .sort((a, b) => new Date(b.createdAt || b.orderDate || 0) - new Date(a.createdAt || a.orderDate || 0))
   .slice(0, 8);
   const pendingPayments = activeOrders().filter((order) => order.balance > 0).slice(0, 6);
   const lowStock = report.lowStock || [];
