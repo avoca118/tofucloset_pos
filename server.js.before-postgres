@@ -4,7 +4,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const mysqlStore = require("./lib/postgres-store");
+const mysqlStore = require("./lib/mysql-store");
 
 const PORT = Number(process.env.PORT || 8800);
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -2301,17 +2301,15 @@ async function ensureDb() {
   const db = await mysqlStore.loadDb(createBaseDb);
   const migrated = normalizeDb(db);
   refreshAllOrders(db);
-  // PostgreSQL migration: keep startup read-only until saveDb() is verified.
   if (migrated || !(db.users || []).length) {
-    console.log("PostgreSQL: skipping startup saveDb() during migration verification.");
+    await mysqlStore.saveDb(db);
   }
   return db;
 }
 
 function saveDb(db) {
-  // PostgreSQL migration: writes are temporarily disabled
-  // until postgres-store.saveDb() is fully verified.
-  return Promise.resolve();
+  persistQueue = persistQueue.then(() => mysqlStore.saveDb(db));
+  return persistQueue;
 }
 
 function sendJson(res, status, payload) {
