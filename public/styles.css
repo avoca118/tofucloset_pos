@@ -2126,13 +2126,23 @@ td .compact-select {
 }
 
 @media (max-width: 768px) {
-  .orders-desktop-table {
-    display: none;
+  .orders-mobile-list .order-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
   }
 
-  .orders-mobile-list {
-    display: grid;
-    gap: 12px;
+  .orders-mobile-list .order-actions .btn {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 3px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .orders-mobile-list .order-actions .btn:first-child {
+    grid-column: auto;
   }
 }
 
@@ -2339,5 +2349,529 @@ td .compact-select {
   background: var(--surface-2);
 }
 
+/* =========================================================
+   Orders — Mobile Card Design
+   ========================================================= */
+
+.orders-mobile-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  .orders-desktop-table {
+    display: none;
+  }
+
+  .orders-mobile-list {
+    display: grid;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .order-mobile-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 14px;
+    gap: 0;
+
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  /* Header */
+  .order-mobile-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .order-mobile-order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .order-mobile-number {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .order-mobile-status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  /* Customer / Items */
+  .order-mobile-block {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .order-mobile-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-bottom: 7px;
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .6;
+  }
+
+  .order-mobile-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  /* Items */
+  .order-mobile-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .order-mobile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    padding: 9px 10px;
+
+    border-radius: 9px;
+    background: var(--surface-2);
+  }
+
+  .order-mobile-item-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .order-mobile-item-main strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .order-mobile-item-qty {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .order-mobile-more-items {
+    padding-top: 2px;
+  }
+
+  /* Money */
+  .order-mobile-money {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .order-mobile-money-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    width: 100%;
+    min-width: 0;
+  }
+
+  .order-mobile-money-row strong {
+    white-space: nowrap;
+  }
+
+  .order-mobile-money-row.balance {
+    margin-top: 3px;
+    padding-top: 9px;
+    border-top: 1px dashed var(--line);
+  }
+
+  /* Deli / Cargo / ETA */
+  .order-mobile-logistics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .order-mobile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .order-mobile-info strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Actions */
+  .order-mobile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    padding-top: 12px;
+  }
+
+  .order-mobile-actions .btn {
+    flex: 1 1 calc(50% - 7px);
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
 
 
+/* Smaller phones */
+@media (max-width: 480px) {
+
+  .order-mobile-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .order-mobile-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .order-mobile-status {
+    justify-content: flex-start;
+  }
+}
+
+/* Order actions — desktop / mobile */
+.order-actions-desktop {
+  display: flex !important;
+}
+
+.order-actions-mobile {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .table-cargo {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  .table-cargo th,
+  .table-cargo td {
+    max-width: 0;
+    overflow: hidden;
+  }
+
+  .table-cargo th:nth-child(1),
+  .table-cargo td:nth-child(1) {
+    width: 9%;
+  }
+
+  .table-cargo th:nth-child(2),
+  .table-cargo td:nth-child(2) {
+    width: 14%;
+  }
+
+  .table-cargo th:nth-child(3),
+  .table-cargo td:nth-child(3) {
+    width: 24%;
+  }
+
+  .table-cargo th:nth-child(4),
+  .table-cargo td:nth-child(4) {
+    width: 10%;
+  }
+
+  .table-cargo th:nth-child(5),
+  .table-cargo td:nth-child(5) {
+    width: 11%;
+  }
+
+  .table-cargo th:nth-child(6),
+  .table-cargo td:nth-child(6) {
+    width: 13%;
+  }
+
+  .table-cargo th:nth-child(7),
+  .table-cargo td:nth-child(7) {
+    width: 20%;
+  }
+}
+
+/* Cargo Batches — Actions vertically */
+.table-cargo td:last-child {
+  vertical-align: middle;
+}
+
+.table-cargo td:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.table-cargo td:last-child .compact-select,
+.table-cargo td:last-child .btn {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  box-sizing: border-box;
+  margin: 0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.table-cargo td:last-child .compact-select {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 28px 0 10px;
+  text-align: center;
+  text-align-last: center;
+}
+
+.table-cargo td:last-child .btn {
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Cargo Batches — mobile cards */
+.cargo-mobile-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .table-cargo {
+    display: none;
+  }
+
+  .cargo-mobile-list {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .cargo-mobile-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .cargo-mobile-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .cargo-mobile-batch {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .cargo-mobile-total {
+    flex: 0 0 auto;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .cargo-mobile-route {
+    padding-bottom: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    border-bottom: 1px solid var(--line);
+    overflow-wrap: anywhere;
+  }
+
+  .cargo-mobile-fees {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cargo-mobile-fee-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .cargo-mobile-fee-row strong {
+    white-space: nowrap;
+  }
+
+  .cargo-mobile-fee-row.total {
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .cargo-mobile-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cargo-mobile-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .cargo-mobile-info-item span,
+  .cargo-mobile-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .6;
+  }
+
+  .cargo-mobile-orders,
+  .cargo-mobile-products {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cargo-mobile-orders > div,
+  .cargo-mobile-products > div {
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .cargo-mobile-status {
+    padding: 12px 0 0;
+  }
+
+  .cargo-mobile-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    padding-top: 10px;
+  }
+
+  .cargo-mobile-actions .compact-select,
+  .cargo-mobile-actions .btn {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    box-sizing: border-box;
+  }
+
+  .cargo-mobile-actions .compact-select {
+    text-align: center;
+    text-align-last: center;
+  }
+}
+
+/* Cargo mobile — batch status in header */
+@media (max-width: 768px) {
+  .cargo-mobile-head-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .cargo-mobile-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .cargo-mobile-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 auto;
+  }
+
+  /* Completed / Arrived / Delivered */
+  .cargo-mobile-status-badge.good {
+    background: #dceee4;
+    color: #26734d;
+  }
+
+  /* In Transit / Shipped / Muse / China */
+  .cargo-mobile-status-badge.warn {
+    background: #fff0cf;
+    color: #9a6a00;
+  }
+
+  /* Pending / Waiting / New */
+  .cargo-mobile-status-badge.dark {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+}

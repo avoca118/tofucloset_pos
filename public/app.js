@@ -179,8 +179,11 @@ function inventoryStatusLabel(product) {
 
 function orderActionsCell(order) {
   return `
-    <div class="order-actions">
-      <button class="btn small secondary" data-action="open-order-details" data-id="${order.id}">Details</button>
+    <div class="order-actions order-actions-desktop">
+      <button class="btn small secondary" data-action="open-order-details" data-id="${order.id}">
+        Details
+      </button>
+
       <select class="more-select" data-action="order-more" data-id="${order.id}" aria-label="More actions">
         <option value="">More</option>
         <option value="open-order">Edit</option>
@@ -189,6 +192,15 @@ function orderActionsCell(order) {
         <option value="open-return">Return</option>
         <option value="open-cancel" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</option>
       </select>
+    </div>
+
+    <div class="order-actions order-actions-mobile">
+      <button class="btn small secondary" data-action="open-order-details" data-id="${order.id}">View</button>
+      <button class="btn small secondary" data-action="open-order" data-id="${order.id}">Edit</button>
+      <button class="btn small secondary" data-action="open-payment" data-id="${order.id}">Payment</button>
+      <button class="btn small secondary" data-action="open-receipt" data-id="${order.id}">Receipt</button>
+      <button class="btn small secondary" data-action="open-return" data-id="${order.id}">Return</button>
+      <button class="btn small secondary" data-action="open-cancel" data-id="${order.id}" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</button>
     </div>
   `;
 }
@@ -830,13 +842,15 @@ function ordersTable(orders, compact = false) {
 
       const overdue = isOverdue(order);
 
-      const eta =
+      const etaRaw =
         order.expectedArrival ||
         items
           .map((item) => item.expectedArrival)
           .filter(Boolean)
           .sort()[0] ||
-        "-";
+        "";
+
+      const eta = etaRaw ? String(etaRaw).slice(0, 10) : "-";
 
       return `
         <tr>
@@ -934,47 +948,63 @@ function ordersTable(orders, compact = false) {
   const mobileCards = orders
     .map((order) => {
       const customer = customerById(order.customerId);
-
       const items = order.items || [];
 
       const itemPreview = items
         .slice(0, 2)
         .map(
-          (item) =>
-            `${esc(item.productName)} ${esc(item.color || "")}/${esc(item.size || "")} ×${item.quantity}`
+          (item) => `
+            <div class="order-mobile-item">
+              <div class="order-mobile-item-main">
+                <strong>${esc(item.productName)}</strong>
+                <span class="muted tiny">
+                  ${esc(item.color || "-")} · ${esc(item.size || "-")}
+                </span>
+              </div>
+
+              <strong class="order-mobile-item-qty">
+                ×${item.quantity}
+              </strong>
+            </div>
+          `
         )
-        .join("<br>");
+        .join("");
 
       const extraItems =
         items.length > 2
-          ? `<div class="muted tiny">+${items.length - 2} more item(s)</div>`
+          ? `<div class="muted tiny order-mobile-more-items">+${items.length - 2} more item(s)</div>`
           : "";
 
-      const cargoBatches = [
-        ...new Set(items.map((item) => item.batchId).filter(Boolean))
-      ].join(", ") || "-";
+      const cargoBatches =
+        [
+          ...new Set(items.map((item) => item.batchId).filter(Boolean))
+        ].join(", ") || "-";
 
-      const eta =
+      const etaRaw =
         order.expectedArrival ||
         items
           .map((item) => item.expectedArrival)
           .filter(Boolean)
           .sort()[0] ||
-        "-";
+        "";
+
+      const eta = etaRaw ? String(etaRaw).slice(0, 10) : "-";
 
       const overdue = isOverdue(order);
 
       return `
         <article class="order-mobile-card">
 
+          <!-- Header -->
           <div class="order-mobile-head">
-            <div>
+            <div class="order-mobile-order-info">
               <strong class="order-mobile-number">
                 ${esc(order.orderNumber)}
               </strong>
-              <div class="muted tiny">
+
+              <span class="muted tiny">
                 ${esc(displayDateOnly(order.orderDate))}
-              </div>
+              </span>
             </div>
 
             <div class="order-mobile-status">
@@ -990,19 +1020,24 @@ function ordersTable(orders, compact = false) {
             </div>
           </div>
 
-          <div class="order-mobile-section">
+          <!-- Customer -->
+          <div class="order-mobile-block">
             <div class="order-mobile-label">Customer</div>
 
             <div class="order-mobile-customer">
               <strong>${esc(customer?.name || "Unknown")}</strong>
               <span class="muted tiny">
-                ${esc(customer?.phone || "")}
+                ${esc(customer?.phone || "-")}
               </span>
             </div>
           </div>
 
-          <div class="order-mobile-section">
-            <div class="order-mobile-label">Items</div>
+          <!-- Items -->
+          <div class="order-mobile-block">
+            <div class="order-mobile-label">
+              Items
+              <span class="muted tiny">${items.length}</span>
+            </div>
 
             <div class="order-mobile-items">
               ${itemPreview}
@@ -1010,7 +1045,8 @@ function ordersTable(orders, compact = false) {
             </div>
           </div>
 
-          <div class="order-mobile-section order-mobile-money">
+          <!-- Money -->
+          <div class="order-mobile-money">
 
             <div class="order-mobile-money-row">
               <span>${esc(order.orderType)}</span>
@@ -1022,81 +1058,81 @@ function ordersTable(orders, compact = false) {
               <strong>${money(order.paid)}</strong>
             </div>
 
-            <div class="order-mobile-money-row">
+            <div class="order-mobile-money-row balance">
               <span>Balance</span>
               <strong>${money(order.balance)}</strong>
             </div>
 
           </div>
 
-          <div class="order-mobile-section">
-            <div class="order-mobile-label">Delivery</div>
+          <!-- Logistics -->
+          <div class="order-mobile-logistics">
 
-            <div class="order-mobile-delivery">
-              <div>
-                <strong>${esc(order.deliveryMethod || "-")}</strong>
-                <span class="muted tiny">
-                  ${esc(order.deliveryStatus || "")}
-                </span>
-              </div>
-
-              <div class="order-mobile-delivery-meta">
-                <span>
-                  Cargo
-                  <strong>${esc(cargoBatches)}</strong>
-                </span>
-
-                <span>
-                  ETA
-                  <strong>${esc(eta)}</strong>
-                </span>
-              </div>
+            <div class="order-mobile-info">
+              <span class="order-mobile-label">Deli</span>
+              <strong>${esc(order.deliveryMethod || "-")}</strong>
+              <span class="muted tiny">
+                ${esc(order.deliveryStatus || "-")}
+              </span>
             </div>
+
+            <div class="order-mobile-info">
+              <span class="order-mobile-label">Cargo</span>
+              <strong>${esc(cargoBatches)}</strong>
+            </div>
+
+            <div class="order-mobile-info">
+              <span class="order-mobile-label">ETA</span>
+              <strong>${esc(eta)}</strong>
+            </div>
+
           </div>
 
+          <!-- Actions -->
           <div class="order-mobile-actions">
             ${orderActionsCell(order)}
           </div>
 
         </article>
-      `;
-    })
-    .join("");
+        `;
+      })
+      .join("");
 
-  return `
-    ${desktopTable}
+    return `
+      ${desktopTable}
 
-    <div class="orders-mobile-list">
-      ${mobileCards}
-    </div>
-  `;
-}
-function orderStatusControls(order) {
-  const settings = state.data.settings;
-  return `
-    <div class="stack">
-      <label>Order status
-        <select class="compact-select" data-action="change-order-status" data-kind="status" data-id="${order.id}">
-          ${settings.orderStatuses.map((status) => `<option ${status === order.status ? "selected" : ""}>${esc(status)}</option>`).join("")}
-        </select>
-      </label>
-      ${order.orderType === "Instock" ? "" : `<label>Preorder status
-        <select class="compact-select" data-action="change-order-status" data-kind="preorderStatus" data-id="${order.id}">
-          ${settings.preorderStatuses.map((status) => `<option ${status === order.preorderStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
-        </select>
-      </label>`}
-      <label>Packing
-        <select class="compact-select" data-action="change-order-status" data-kind="packingStatus" data-id="${order.id}">
-          ${settings.packingStatuses.map((status) => `<option ${status === order.packingStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
-        </select>
-      </label>
-      <label>Delivery
-        <select class="compact-select" data-action="change-order-status" data-kind="deliveryStatus" data-id="${order.id}">
-          ${settings.deliveryStatuses.map((status) => `<option ${status === order.deliveryStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
-        </select>
-      </label>
-    </div>
-  `;
+      <div class="orders-mobile-list">
+        ${mobileCards}
+      </div>
+    `;
+  }
+
+  function orderStatusControls(order) {
+    const settings = state.data.settings;
+    return `
+      <div class="stack">
+        <label>Order status
+          <select class="compact-select" data-action="change-order-status" data-kind="status" data-id="${order.id}">
+            ${settings.orderStatuses.map((status) => `<option ${status === order.status ? "selected" : ""}>${esc(status)}</option>`).join("")}
+          </select>
+        </label>
+        ${order.orderType === "Instock" ? "" : `<label>Preorder status
+          <select class="compact-select" data-action="change-order-status" data-kind="preorderStatus" data-id="${order.id}">
+            ${settings.preorderStatuses.map((status) => `<option ${status === order.preorderStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
+          </select>
+        </label>`}
+        <label>Packing
+          <select class="compact-select" data-action="change-order-status" data-kind="packingStatus" data-id="${order.id}">
+            ${settings.packingStatuses.map((status) => `<option ${status === order.packingStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Delivery
+          <select class="compact-select" data-action="change-order-status" data-kind="deliveryStatus" data-id="${order.id}">
+            ${settings.deliveryStatuses.map((status) => `<option ${status === order.deliveryStatus ? "selected" : ""}>${esc(status)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    `;
 }
 
 function renderInventory() {
@@ -1311,7 +1347,6 @@ function renderCargo() {
         <td class="nowrap">
           <span class="badge ${cargoBadgeClass(batch.status)}">${esc(batch.status)}</span>
         </td>
-        <td class="nowrap">${esc(batch.arrivalDate || "")}</td>
         <td class="cell-clip" title="${esc((batch.orderIds || []).map((id) => orderById(id)?.orderNumber || id).join(", ") || "-")}">${(batch.orderIds || []).map((id) => esc(orderById(id)?.orderNumber || id)).join(", ") || "-"}</td>
         <td class="cell-clip" title="${esc(batchProducts(batch) || "-")}">${esc(batchProducts(batch) || "-")}</td>
         <td class="nowrap">
@@ -1322,6 +1357,122 @@ function renderCargo() {
         </td>
       </tr>
     `)
+    .join("");
+      const mobileBatchCards = state.data.cargoBatches
+    .map((batch) => {
+      const orders = (batch.orderIds || [])
+        .map((id) => orderById(id)?.orderNumber || id);
+
+      const products = batchProducts(batch) || "-";
+
+      const orderCount = orders.length;
+
+      const itemCount = (batch.orderIds || []).reduce((sum, orderId) => {
+        const order = orderById(orderId);
+
+        return (
+          sum +
+          (order?.items || []).reduce(
+            (itemSum, item) => itemSum + Number(item.quantity || 0),
+            0
+          )
+        );
+      }, 0);
+
+      return `
+        <article class="cargo-mobile-card">
+
+          <div class="cargo-mobile-head">
+            <div class="cargo-mobile-head-left">
+              <strong class="cargo-mobile-batch">
+                ${esc(batch.batchId)}
+              </strong>
+
+              <span class="cargo-mobile-status-badge ${cargoBadgeClass(batch.status)}">
+                <span class="cargo-mobile-status-dot"></span>
+                ${esc(batch.status)}
+              </span>
+            </div>
+
+            <strong class="cargo-mobile-total">
+              ${money(batch.cargoFee || 0)}
+            </strong>
+          </div>
+
+          <div class="muted tiny">
+            ${esc(batch.date)}
+          </div>
+
+          <div class="cargo-mobile-route">
+            ${esc(batch.route)}
+          </div>
+
+          <div class="cargo-mobile-fees">
+            <div class="cargo-mobile-fee-row">
+              <span>China → Muse</span>
+              <strong>${money(batch.chinaMuseCargoFee || 0)}</strong>
+            </div>
+
+            <div class="cargo-mobile-fee-row">
+              <span>Muse → Yangon</span>
+              <strong>${money(batch.museYangonCargoFee || 0)}</strong>
+            </div>
+
+            <div class="cargo-mobile-fee-row total">
+              <span>Total</span>
+              <strong>${money(batch.cargoFee || 0)}</strong>
+            </div>
+
+            ${
+              batch.otherExpenses
+                ? `
+                  <div class="cargo-mobile-fee-row muted">
+                    <span>Other</span>
+                    <strong>${money(batch.otherExpenses)}</strong>
+                  </div>
+                `
+                : ""
+            }
+          </div>
+
+          <div class="cargo-mobile-info">
+            <div class="cargo-mobile-info-item">
+              <span>Orders</span>
+              <strong>${orderCount} orders</strong>
+            </div>
+
+            <div class="cargo-mobile-info-item">
+              <span>Items</span>
+              <strong>${itemCount} items</strong>
+            </div>
+          </div>
+
+          <div class="cargo-mobile-actions">
+            <select
+              class="compact-select"
+              data-action="change-batch-status"
+              data-id="${batch.id}"
+            >
+              ${state.data.settings.cargoStatuses
+                .map(
+                  (status) =>
+                    `<option ${status === batch.status ? "selected" : ""}>${esc(status)}</option>`
+                )
+                .join("")}
+            </select>
+
+            <button
+              class="btn small secondary"
+              data-action="edit-cargo-orders"
+              data-id="${batch.id}"
+            >
+              Edit Orders
+            </button>
+          </div>
+
+        </article>
+      `;
+    })
     .join("");
   return `
     <section class="section-head">
@@ -1420,12 +1571,15 @@ function renderCargo() {
       </div>
     </section>
     <div class="panel">
-      <h3>Cargo Batches</h3>
+      <h3 style="margin-bottom: 10px;">Cargo Batches</h3>
       <div class="table-wrap embedded">
         <table class="table-cargo">
-          <thead><tr><th>Batch</th><th>Route</th><th>Fee</th><th>Status</th><th>Arrival</th><th>Orders</th><th>Products</th><th>Actions</th></tr></thead>
-          <tbody>${batchRows || `<tr><td colspan="8"><div class="empty-state">No cargo batches yet.</div></td></tr>`}</tbody>
+          <thead><tr><th>Batch</th><th>Route</th><th>Fee</th><th>Status</th><th>Orders</th><th>Products</th><th>Actions</th></tr></thead>
+          <tbody>${batchRows || `<tr><td colspan="7"><div class="empty-state">No cargo batches yet.</div></td></tr>`}</tbody>
         </table>
+      </div>
+      <div class="cargo-mobile-list">
+        ${mobileBatchCards}
       </div>
     </div>
   `;
