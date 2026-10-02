@@ -2158,8 +2158,8 @@ function openPaymentModal(order) {
     </div>
     <form id="payment-form" data-id="${order.id}" class="grid">
       <label>Amount<input name="amount" type="number" min="1" max="${order.balance}" value="${order.balance}" required></label>
+      <label>Payment Date<input name="paymentDate" type="date" value="${new Date(Date.now() + 6.5 * 60 * 60 * 1000).toISOString().slice(0, 10)}" required></label>
       <label>Method<select name="method">${state.data.settings.paymentMethods.map((method) => `<option>${esc(method)}</option>`).join("")}</select></label>
-      <label>Note<textarea name="note"></textarea></label>
       <div class="form-actions">
         <button class="btn secondary" type="button" data-action="close-modal">Cancel</button>
         <button class="btn good" type="submit">Save payment</button>
