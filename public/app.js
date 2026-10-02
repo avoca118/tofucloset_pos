@@ -2033,7 +2033,7 @@ function lineItemRow(item = null, orderType = "") {
   const selectedProduct = item?.productId || "";
   const selectedVariant = item?.variantId || "";
   return `
-    <div class="line-item">
+    <div class="line-item" data-item-id="${esc(item?.id || "")}">
       <label>Product
         <input
           class="line-product-name"
@@ -2049,12 +2049,30 @@ function lineItemRow(item = null, orderType = "") {
         >
       </label>
 
+      <label>Size
+        <input
+          class="line-size"
+          name="size"
+          value="${esc(item?.size || "")}"
+          placeholder="Size"
+        >
+      </label>
+
+      <label>Color
+        <input
+          class="line-color"
+          name="color"
+          value="${esc(item?.color || "")}"
+          placeholder="Color"
+        >
+      </label>
+
       <label>Variant
         <input
           class="line-variant-name"
           name="variantName"
           value="${esc(item?.variantName || "")}"
-          placeholder="Size / Color / Variant"
+          placeholder="Variant"
         >
       </label>
 
@@ -2362,10 +2380,13 @@ function parseOrderItems(form) {
     }
 
     return {
+      id: row.dataset.itemId || "",
       productId: matchedProduct?.id || productIdInput?.value || "",
       productName,
       variantId: row.querySelector(".line-variant")?.value || "",
-      variantName: variantInput?.value?.trim() || "",
+      size: row.querySelector(".line-size")?.value?.trim() || "",
+      color: row.querySelector(".line-color")?.value?.trim() || "",
+      variantName: row.querySelector(".line-variant-name")?.value?.trim() || "",
       quantity: Number(row.querySelector(".line-qty").value),
       unitPrice: Number(row.querySelector(".line-price").value),
       discount: Number(row.querySelector(".line-discount").value)
@@ -2621,8 +2642,9 @@ document.addEventListener("click", async (event) => {
 
       html2canvas(receipt, {
         backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true
+        scale: Math.max(4, window.devicePixelRatio * 4),
+        useCORS: true,
+        logging: false
       }).then((canvas) => {
         const link = document.createElement("a");
         const order = orderById(

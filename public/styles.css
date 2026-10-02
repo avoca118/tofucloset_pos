@@ -1418,7 +1418,15 @@ tbody tr:hover td {
 
 .line-item {
   display: grid;
-  grid-template-columns: minmax(150px, 1.2fr) minmax(145px, 1.1fr) minmax(76px, 0.45fr) minmax(100px, 0.6fr) minmax(100px, 0.6fr) 42px;
+  grid-template-columns:
+    minmax(180px, 1.5fr)
+    70px
+    minmax(90px, 0.8fr)
+    minmax(90px, 0.8fr)
+    65px
+    minmax(130px, 1fr)
+    minmax(100px, 0.8fr)
+    40px;
   gap: 10px;
   align-items: end;
   border: 1px solid var(--line);
@@ -1924,7 +1932,11 @@ td .compact-select {
     width: 100% !important;
     max-width: 100% !important;
     table-layout: auto !important;
-    border-collapse: collapse !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid #b8d8c8 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
     font-size: 14px !important;
   }
 
@@ -1933,6 +1945,17 @@ td .compact-select {
     padding: 7px 8px !important;
     vertical-align: middle !important;
     white-space: nowrap !important;
+    border-bottom: 1px solid #d7e9df !important;
+  }
+
+  #modal-root .receipt table th {
+    background: #eef8f2 !important;
+    color: #315c48 !important;
+    font-weight: 600 !important;
+  }
+
+  #modal-root .receipt table tr:last-child td {
+    border-bottom: none !important;
   }
 
   /* Product column wider */
