@@ -363,30 +363,58 @@ function productColors(product) {
 
 function renderLogin(error = "") {
   app.innerHTML = `
-    <main class="login-shell">
-      <section class="login-visual">
-        <div>
-          <h1>TOFU'S CLOSET</h1>
-          <p>Orders, preorder deposits, stock, packing, delivery, and profit in one calm workspace.</p>
-        </div>
-      </section>
-      <section class="login-panel">
-        <form class="login-card" id="login-form">
-          <div class="brand-mark"><span class="brand-dot">TC</span><span>TOFU'S CLOSET POS</span></div>
+    <main class="login-page">
+      <div class="login-bg"></div>
+
+      <section class="login-card" aria-label="Sign in">
+        <div class="login-brand">
+          <div class="login-logo">TC</div>
           <div>
-            <h2>Welcome back</h2>
-            <p class="muted">Sign in to manage today's orders and operations.</p>
+            <div class="login-brand-name">TOFU'S CLOSET</div>
+            <div class="login-brand-sub">POINT OF SALE</div>
           </div>
+        </div>
+
+        <div class="login-heading">
+          <h1>Welcome back</h1>
+          <p>Sign in to continue to your workspace.</p>
+        </div>
+
+        <form id="login-form">
           <div class="error ${error ? "is-visible" : ""}">${esc(error)}</div>
-          <label>Email
-            <input name="email" type="email" value="owner@tofuscloset.local" autocomplete="username" required>
+
+          <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              value="owner@tofuscloset.local"
+              autocomplete="username"
+              required
+            >
           </label>
-          <label>Password
-            <input name="password" type="password" value="owner123" autocomplete="current-password" required>
+
+          <label>
+            Password
+            <input
+              name="password"
+              type="password"
+              value="owner123"
+              autocomplete="current-password"
+              required
+            >
           </label>
-          <button class="btn good" type="submit">Sign in</button>
-          <p class="muted tiny">Owner: owner@tofuscloset.local / owner123<br>Staff: staff@tofuscloset.local / staff123</p>
+
+          <button class="login-button" type="submit">
+            Sign in
+          </button>
         </form>
+
+        <div class="login-footer">
+          <span>Tofu's Closet POS</span>
+          <span>•</span>
+          <span>Private workspace</span>
+        </div>
       </section>
     </main>
   `;
@@ -2537,7 +2565,7 @@ function parseOrderItems(form) {
       id: row.dataset.itemId || "",
       productId: matchedProduct?.id || productIdInput?.value || "",
       productName,
-      variantId: row.querySelector(".line-variant")?.value || "",
+      variantId: "",
       size: row.querySelector(".line-size")?.value?.trim() || "",
       color: row.querySelector(".line-color")?.value?.trim() || "",
       variantName: row.querySelector(".line-variant-name")?.value?.trim() || "",

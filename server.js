@@ -623,26 +623,49 @@ function normalizeOrderItem(db, item) {
   }
 
   // NORMAL / STOCK ORDER
-  const found = findVariant(db, item.variantId);
+  const product = item.productId
+    ? findProduct(db, item.productId)
+    : null;
 
-  assertRule(found, "Product variant not found");
-  assertRule(found.product.active !== false, "Product is inactive");
-  assertRule(found.variant.active !== false, "Product variant is inactive");
+  const found = item.variantId
+    ? findVariant(db, item.variantId)
+    : null;
+
+  assertRule(product || found, "Product is required");
+
+  if (found) {
+    assertRule(found.product.active !== false, "Product is inactive");
+    assertRule(found.variant.active !== false, "Product variant is inactive");
+  }
+
+  const selectedProduct = found?.product || product;
+  const selectedVariant = found?.variant || null;
 
   return {
     id: item.id || createId("item"),
-    productId: found.product.id,
-    variantId: found.variant.id,
-    sku: found.product.sku,
-    productName: found.product.name,
-    color: found.variant.color,
-    size: found.variant.size,
-    variantName: `${found.variant.color} / ${found.variant.size}`,
+    productId: selectedProduct?.id || item.productId || null,
+    variantId: selectedVariant?.id || null,
+    sku: selectedProduct?.sku || "",
+    productName: selectedProduct?.name || String(item.productName || "").trim(),
+    color: String(item.color || selectedVariant?.color || "").trim(),
+    size: String(item.size || selectedVariant?.size || "").trim(),
+    variantName: String(
+      item.variantName ||
+      (selectedVariant ? `${selectedVariant.color} / ${selectedVariant.size}` : "")
+    ).trim(),
     quantity,
-    unitPrice: unitPrice || found.product.discountPrice || found.product.sellingPrice,
+    unitPrice:
+      unitPrice ||
+      selectedProduct?.discountPrice ||
+      selectedProduct?.sellingPrice ||
+      0,
     discount,
-    purchaseCost: toInt(item.purchaseCost || found.product.purchaseCost),
-    cargoCost: toInt(item.cargoCost ?? found.product.defaultCargoCost),
+    purchaseCost: toInt(
+      item.purchaseCost || selectedProduct?.purchaseCost || 0
+    ),
+    cargoCost: toInt(
+      item.cargoCost ?? selectedProduct?.defaultCargoCost ?? 0
+    ),
     supplierStatus: item.supplierStatus || "Pending",
     cargoStatus: item.cargoStatus || "Waiting",
     arrivalStatus: item.arrivalStatus || "Waiting",
