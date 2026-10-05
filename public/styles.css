@@ -2290,7 +2290,7 @@ td .compact-select {
 
 .table-orders th:nth-child(7),
 .table-orders td:nth-child(7) {
-  width: 8%;
+  width: 10%;
 }
 
 /* General */
@@ -2650,22 +2650,39 @@ td .compact-select {
 
   /* Actions */
   .order-mobile-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-
     padding-top: 12px;
   }
 
-  .order-mobile-actions .btn {
-    flex: 1 1 calc(50% - 7px);
+  .order-mobile-actions .btn,
+  .order-mobile-actions .more-select {
+    width: 100%;
     min-width: 0;
+    max-width: none;
     box-sizing: border-box;
-  }
+    margin: 0;
+  }.order-mobile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+
+      padding-top: 12px;
+    }
+
+    .order-mobile-actions .btn {
+      flex: 1 1 calc(50% - 7px);
+      min-width: 0;
+      box-sizing: border-box;
+    }
 }
 
 
@@ -2971,5 +2988,125 @@ td .compact-select {
   .cargo-mobile-status-badge.dark {
     background: var(--surface-2);
     color: var(--muted);
+  }
+}
+
+ /* =========================================================
+    Orders Actions — Clean & Compact
+    ========================================================= */
+
+ /* Desktop / Tablet */
+ @media (min-width: 769px) {
+   .order-table-actions .order-actions-desktop {
+     display: grid !important;
+     grid-template-columns: 1fr;
+     gap: 6px;
+     width: 100%;
+     align-items: stretch;
+   }
+
+   .order-table-actions .order-actions-desktop .btn,
+   .order-table-actions .order-actions-desktop .more-select {
+     width: 100% !important;
+     min-width: 0 !important;
+     height: 34px;
+     min-height: 34px;
+     box-sizing: border-box;
+     border-radius: 8px;
+     font-size: 0.78rem;
+     font-weight: 600;
+   }
+
+   .order-table-actions .order-actions-desktop .btn {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 0 8px;
+   }
+
+   .order-table-actions .order-actions-desktop .more-select {
+     padding: 0 6px;
+     text-align: center;
+     text-align-last: center;
+   }
+ }
+
+ /* Mobile */
+ @media (max-width: 768px) {
+   .order-actions-mobile {
+     display: grid !important;
+     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+     gap: 8px;
+     width: 100% !important;
+   }
+
+     .order-actions-mobile .btn,
+  .order-actions-mobile .more-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none;
+    height: 42px;
+    min-height: 42px;
+    box-sizing: border-box;
+    border-radius: 9px;
+
+    font-size: 14px !important;
+    font-weight: 650 !important;
+    line-height: 1;
+  }
+
+  .order-actions-mobile .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+  }
+
+  .order-actions-mobile .more-select {
+    padding: 0 8px;
+    text-align: center;
+    text-align-last: center;
+  }
+ }
+
+ /* =========================================================
+   Orders Actions — Mobile: hide desktop actions
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .order-actions-desktop {
+    display: none !important;
+  }
+
+  .order-actions-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100% !important;
+  }
+}
+
+/* Desktop Orders — fit More button inside Actions column */
+
+@media (min-width: 769px) {
+  .order-table-actions .order-actions-desktop {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .order-table-actions .order-actions-desktop .btn,
+  .order-table-actions .order-actions-desktop .more-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .order-table-actions .order-actions-desktop .more-select {
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: 0.76rem;
+    text-align: center;
+    text-align-last: center;
   }
 }

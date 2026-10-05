@@ -180,29 +180,70 @@ function inventoryStatusLabel(product) {
 function orderActionsCell(order) {
   return `
     <div class="order-actions order-actions-desktop">
-      <button class="btn small secondary" data-action="open-order-details" data-id="${order.id}">
+      <button
+        class="btn small secondary"
+        data-action="open-order-details"
+        data-id="${order.id}"
+      >
         Details
       </button>
 
-      <select class="more-select" data-action="order-more" data-id="${order.id}" aria-label="More actions">
+      <select
+        class="more-select"
+        data-action="order-more"
+        data-id="${order.id}"
+        aria-label="More actions"
+      >
         <option value="">More</option>
         <option value="open-order">Edit</option>
         <option value="open-payment">Payment</option>
         <option value="open-receipt">Receipt</option>
         <option value="open-return">Return</option>
-        <option value="open-cancel" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</option>
+        <option
+          value="open-cancel"
+          ${order.status === "Cancelled" ? "disabled" : ""}
+        >
+          Cancel
+        </option>
         <option value="delete-order">Delete</option>
       </select>
     </div>
 
     <div class="order-actions order-actions-mobile">
-      <button class="btn small secondary" data-action="open-order-details" data-id="${order.id}">View</button>
-      <button class="btn small secondary" data-action="open-order" data-id="${order.id}">Edit</button>
-      <button class="btn small secondary" data-action="open-payment" data-id="${order.id}">Payment</button>
-      <button class="btn small secondary" data-action="open-receipt" data-id="${order.id}">Receipt</button>
-      <button class="btn small secondary" data-action="open-return" data-id="${order.id}">Return</button>
-      <button class="btn small secondary" data-action="open-cancel" data-id="${order.id}" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</button>
-      <button class="btn small danger" data-action="delete-order" data-id="${order.id}">Delete</button>
+      <button
+        class="btn small secondary"
+        data-action="open-order-details"
+        data-id="${order.id}"
+      >
+        View
+      </button>
+
+      <button
+        class="btn small secondary"
+        data-action="open-order"
+        data-id="${order.id}"
+      >
+        Edit
+      </button>
+
+      <select
+        class="more-select"
+        data-action="order-more"
+        data-id="${order.id}"
+        aria-label="More actions"
+      >
+        <option value="">More</option>
+        <option value="open-payment">Payment</option>
+        <option value="open-receipt">Receipt</option>
+        <option value="open-return">Return</option>
+        <option
+          value="open-cancel"
+          ${order.status === "Cancelled" ? "disabled" : ""}
+        >
+          Cancel
+        </option>
+        <option value="delete-order">Delete</option>
+      </select>
     </div>
   `;
 }
