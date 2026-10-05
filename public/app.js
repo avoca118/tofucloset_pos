@@ -2503,10 +2503,6 @@ function openReceipt(order) {
       <div class="toolbar"><button class="btn small secondary" data-action="print-receipt">Print</button><button class="btn small secondary" data-action="save-receipt-png" data-id="${order.id}">Save PNG</button><button class="btn small secondary" data-action="close-modal">Close</button></div>
     </div>
     <div class="receipt">
-      <div class="receipt-logo">
-        <img src="/logo.jpg" alt="Tofu's Closet">
-      </div>
-
       <div class="split"><div><h2>TOFU'S CLOSET</h2><div class="muted">${esc(state.data.settings.contactInfo)}</div></div><div><strong>${esc(order.orderNumber)}</strong><div class="muted tiny">${esc(displayDateOnly(order.orderDate))}</div></div></div>
       <div class="grid cols-2">
         <div><strong>Customer</strong><div>${esc(customer?.name || "")}</div><div class="muted tiny">${esc(customer?.phone || "")}</div><div class="muted tiny">${esc(customer?.address || "")}</div></div>
@@ -2517,7 +2513,6 @@ function openReceipt(order) {
         <div class="table-wrap"><table><tbody><tr><th>Total</th><td>${money(order.total)}</td></tr><tr><th>Paid</th><td>${money(order.paid)}</td></tr><tr><th>Remaining Balance</th><td>${money(order.balance)}</td></tr></tbody></table></div>
       </div>
       <div><strong>Customer Notes</strong><div class="muted">${esc(order.customerNotes || "")}</div></div>
-      <div class="receipt-thank-you">Thank you for choosing Tofu’s Closet!</div>
     </div>
   `);
 }
