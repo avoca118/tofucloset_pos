@@ -995,6 +995,51 @@ function cancelOrder(db, orderId, reason, user) {
   return refreshOrder(db, order);
 }
 
+function deleteOrder(db, orderId, user) {
+  assertRule(
+    user.role === "Owner",
+    "Only the Owner can permanently delete orders",
+    403
+  );
+
+  const index = db.orders.findIndex((item) => item.id === orderId);
+  assertRule(index !== -1, "Order not found", 404);
+
+  const order = db.orders[index];
+
+  // Remove related payments
+  db.payments = (db.payments || []).filter(
+    (payment) => payment.orderId !== orderId
+  );
+
+  // Remove related refunds
+  db.refunds = (db.refunds || []).filter(
+    (refund) => refund.orderId !== orderId
+  );
+
+  // Remove related returns
+  db.returns = (db.returns || []).filter(
+    (item) => item.orderId !== orderId
+  );
+
+  // Remove related inventory transactions
+  db.inventoryTransactions = (db.inventoryTransactions || []).filter(
+    (item) => item.orderId !== orderId
+  );
+
+  // Remove order from cargo batches
+  for (const batch of db.cargoBatches || []) {
+    if (Array.isArray(batch.orderIds)) {
+      batch.orderIds = batch.orderIds.filter((id) => id !== orderId);
+    }
+  }
+
+  // Finally remove the order itself
+  db.orders.splice(index, 1);
+
+  return order;
+}
+
 function addPayment(db, orderId, input, user) {
   assertRule(can(user, "payments:create"), "You do not have permission to record payments", 403);
   const order = db.orders.find((item) => item.id === orderId);
@@ -2522,6 +2567,14 @@ async function handleApi(req, res, db) {
     const order = updateOrder(db, params.id, await parseBody(req), user);
     saveDb(db);
     return sendJson(res, 200, { order });
+  }
+  if (params && method === "DELETE") {
+    const order = deleteOrder(db, params.id, user);
+    saveDb(db);
+    return sendJson(res, 200, {
+      message: "Order deleted successfully",
+      order
+    });
   }
   params = routeMatch(pathname, "/api/orders/:id/cancel");
   if (params && method === "POST") {

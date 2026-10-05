@@ -191,6 +191,7 @@ function orderActionsCell(order) {
         <option value="open-receipt">Receipt</option>
         <option value="open-return">Return</option>
         <option value="open-cancel" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</option>
+        <option value="delete-order">Delete</option>
       </select>
     </div>
 
@@ -201,6 +202,7 @@ function orderActionsCell(order) {
       <button class="btn small secondary" data-action="open-receipt" data-id="${order.id}">Receipt</button>
       <button class="btn small secondary" data-action="open-return" data-id="${order.id}">Return</button>
       <button class="btn small secondary" data-action="open-cancel" data-id="${order.id}" ${order.status === "Cancelled" ? "disabled" : ""}>Cancel</button>
+      <button class="btn small danger" data-action="delete-order" data-id="${order.id}">Delete</button>
     </div>
   `;
 }
@@ -213,6 +215,32 @@ function runOrderMoreAction(orderId, action) {
   if (action === "open-receipt") openReceipt(order);
   if (action === "open-return") openReturnModal(order);
   if (action === "open-cancel") openCancelModal(order);
+  if (action === "delete-order") deleteOrder(orderId);
+}
+
+async function deleteOrder(orderId) {
+  const order = orderById(orderId);
+  if (!order) return;
+
+  const confirmed = confirm(
+    `Delete ${order.orderNumber || "this order"} permanently?\n\n` +
+    `This will permanently remove the order and its related payments, ` +
+    `refunds, returns, and inventory records.\n\n` +
+    `This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await api(`/api/orders/${orderId}`, {
+      method: "DELETE"
+    });
+
+    await loadData();
+    renderView();
+  } catch (error) {
+    alert(error.message || "Failed to delete order.");
+  }
 }
 
 async function api(path, options = {}) {
@@ -2850,6 +2878,29 @@ document.addEventListener("click", async (event) => {
     if (action === "remove-line") {
       const rows = [...document.querySelectorAll(".line-item")];
       if (rows.length > 1) target.closest(".line-item").remove();
+    }
+    if (action === "delete-order") {
+      const order = orderById(target.dataset.id);
+
+      if (!order) {
+        showError("Order not found.");
+        return;
+      }
+
+      if (
+        confirm(
+          `Delete ${order.orderNumber || "this order"} permanently?\n\n` +
+          `This will remove the order and its related payments, refunds, ` +
+          `returns, and inventory records.\n\n` +
+          `This action cannot be undone.`
+        )
+      ) {
+        await api(`/api/orders/${target.dataset.id}`, {
+          method: "DELETE"
+        });
+
+        await refreshAndRender();
+      }
     }
     if (action === "delete-product") {
       if (confirm("Soft delete this product? Existing order history will remain.")) {
