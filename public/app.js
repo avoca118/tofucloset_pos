@@ -627,7 +627,14 @@ function renderDashboard() {
           <div class="status-cell"><strong>${money(report.grossSales)}</strong><span class="muted tiny">Gross sales</span></div>
           <div class="status-cell"><strong>${money(report.paidAmount)}</strong><span class="muted tiny">Collected</span></div>
           <div class="status-cell"><strong>${money(report.refunds)}</strong><span class="muted tiny">Refunds</span></div>
-          <div class="status-cell"><strong>${money(report.netProfit)}</strong><span class="muted tiny">Net profit</span></div>
+          <div class="status-cell">
+            <strong>${report.missingPurchaseCostOrders || 0}</strong>
+            <span class="muted tiny">Orders missing purchase cost</span>
+          </div>
+          <div class="status-cell">
+            <strong>${money(report.netProfit)}</strong>
+            <span class="muted tiny">Net profit (complete-cost orders)</span>
+          </div>
         </div>
       </div>
       <div class="panel">
@@ -1772,7 +1779,20 @@ function renderFinanceOverview() {
       ${metric("Revenue", money(report.netSales), `${report.range.from} to ${report.range.to}`, "sales")}
       ${metric("Collected", money(state.reportGenerated ? (report.totalCollected ?? report.paidAmount) : 0), "Cash received", "bag")}
       ${metric("Remaining", money(report.remainingBalance), "Active balances", "pending")}
-      ${metric("Net Profit", money(report.netProfit), "After costs & expenses", "profit")}
+      ${metric(
+        "Missing Purchase Cost",
+        report.missingPurchaseCostOrders || 0,
+        "Orders needing purchase prices",
+        "pending"
+      )}
+      ${metric(
+        "Net Profit",
+        money(report.netProfit),
+        (report.missingPurchaseCostOrders || 0) > 0
+          ? "Excludes orders with missing costs"
+          : "After costs & expenses",
+        "profit"
+      )}
     </section>
     <section class="grid cols-2">
       <div class="panel">
@@ -2339,6 +2359,17 @@ function lineItemRow(item = null, orderType = "") {
         <input class="line-discount" type="number" min="0" value="${item?.discount || 0}">
       </label>
 
+
+      <label>Purchase Price
+        <input
+          class="line-purchase-cost"
+          type="number"
+          min="0"
+          value="${item?.purchaseCost ?? ""}"
+          placeholder="Enter cost"
+        >
+      </label>
+
       <button class="btn small danger" type="button" data-action="remove-line">X</button>
     </div>
   `;
@@ -2463,16 +2494,47 @@ function openReturnModal(order) {
 
 function openOrderDetails(order) {
   const customer = customerById(order.customerId);
+  
   const itemRows = order.items
-    .map((item) => `
-      <tr>
-        <td>${esc(item.productName)}<div class="muted tiny">${esc(item.sku || "")}</div></td>
-        <td>${esc(item.size)} / ${esc(item.color)}<div class="muted tiny">Qty ${item.quantity}</div></td>
-        <td>${money(item.quantity * item.unitPrice - item.discount)}<div class="muted tiny">Discount ${money(item.discount)}</div></td>
-        <td><span class="badge ${classForStatus(item.arrivalStatus)}">${esc(item.arrivalStatus || "Waiting")}</span><div class="muted tiny">Cargo ${esc(item.cargoStatus || "Waiting")}</div></td>
-        <td>${esc(item.batchId || order.batchId || "-")}<div class="muted tiny">Expected ${esc(displayDateOnly(item.expectedArrival || order.expectedArrival || ""))}</div></td>
-      </tr>
-    `)
+    .map((item) => {
+      const hasPurchaseCost =
+        item.purchaseCost != null &&
+        item.purchaseCost !== "" &&
+        Number.isFinite(Number(item.purchaseCost)) &&
+        Number(item.purchaseCost) >= 0;
+
+      const purchasePrice = hasPurchaseCost
+        ? Number(item.purchaseCost)
+        : null;
+
+      const totalCost = hasPurchaseCost
+        ? purchasePrice * Number(item.quantity || 0)
+        : null;
+
+      const itemProfit = hasPurchaseCost
+        ? Number(item.quantity || 0) * Number(item.unitPrice || 0)
+          - Number(item.discount || 0)
+          - totalCost
+        : null;
+
+      return `
+        <tr>
+          <td>${esc(item.productName)}<div class="muted tiny">${esc(item.sku || "")}</div></td>
+          <td>${esc(item.size)} / ${esc(item.color)}<div class="muted tiny">Qty ${item.quantity}</div></td>
+          <td>${money(item.quantity * item.unitPrice - item.discount)}<div class="muted tiny">Discount ${money(item.discount)}</div></td>
+          <td>
+            ${hasPurchaseCost ? money(purchasePrice) : '<span class="badge warn">Cost missing</span>'}
+            <div class="muted tiny">Total cost: ${hasPurchaseCost ? money(totalCost) : "—"}</div>
+          </td>
+          <td>
+            ${hasPurchaseCost ? money(itemProfit) : "—"}
+            <div class="muted tiny">${hasPurchaseCost ? "Item profit" : "Enter purchase price"}</div>
+          </td>
+          <td><span class="badge ${classForStatus(item.arrivalStatus)}">${esc(item.arrivalStatus || "Waiting")}</span><div class="muted tiny">Cargo ${esc(item.cargoStatus || "Waiting")}</div></td>
+          <td>${esc(item.batchId || order.batchId || "-")}<div class="muted tiny">Expected ${esc(displayDateOnly(item.expectedArrival || order.expectedArrival || ""))}</div></td>
+        </tr>
+      `;
+    })
     .join("");
   const payments = orderPayments(order.id)
     .map((payment) => `<div class="timeline-item"><strong>${esc(String(payment.paymentDate || "").slice(0, 10))} · Payment · ${money(payment.amount)}</strong><div class="muted tiny">${esc(payment.method)} · ${esc(payment.note || "")}</div></div>`)
@@ -2503,7 +2565,15 @@ function openOrderDetails(order) {
       ${metric("Additional Payments", money(Math.max(order.paid - (order.requiredDeposit || 0), 0)), "After deposit")}
       ${metric("Remaining Balance", money(order.balance), esc(order.paymentStatus))}
       ${metric("Refund", money(order.refunded || 0), `Final paid ${money(order.finalPaidAmount || order.paid)}`)}
-      ${metric("Net Profit", money(order.netProfit || 0), "After item costs")}
+      ${metric(
+        "Net Profit",
+        order.items.some((item) => item.purchaseCost == null || item.purchaseCost === "")
+          ? "Cost missing"
+          : money(order.netProfit || 0),
+        order.items.some((item) => item.purchaseCost == null || item.purchaseCost === "")
+          ? "Enter purchase price for all items"
+          : "After item costs"
+      )}
     </section>
     <section class="grid cols-2">
       <div class="panel">
@@ -2537,7 +2607,7 @@ function openOrderDetails(order) {
     </section>
     <div class="panel">
       <h3 style="margin-bottom: 10px;">Items</h3>
-      <div class="table-wrap"><table class="table-order-items"><thead><tr><th>Product</th><th>Variant</th><th>Total</th><th>Status</th><th>Cargo / ETA</th></tr></thead><tbody>${itemRows}</tbody></table></div>
+      <div class="table-wrap"><table class="table-order-items"><thead><tr><th>Product</th><th>Variant</th><th>Total</th><th>Purchase Price</th><th>Total Cost</th><th>Item Profit</th><th>Status</th><th>Cargo / ETA</th></tr></thead><tbody>${itemRows}</tbody></table></div>
     </div>
     <section class="grid cols-2">
       <div class="panel"><h3>Payment History</h3><div class="timeline">${payments || `<div class="empty-state">No payments yet.</div>`}${refunds}</div></div>
@@ -2640,7 +2710,10 @@ function parseOrderItems(form) {
       variantName: row.querySelector(".line-variant-name")?.value?.trim() || "",
       quantity: Number(row.querySelector(".line-qty").value),
       unitPrice: Number(row.querySelector(".line-price").value),
-      discount: Number(row.querySelector(".line-discount").value)
+      discount: Number(row.querySelector(".line-discount").value),
+      purchaseCost: row.querySelector(".line-purchase-cost")?.value.trim() === ""
+        ? null
+        : Number(row.querySelector(".line-purchase-cost").value)
     };
   });
 }
