@@ -3110,3 +3110,80 @@ td .compact-select {
     text-align-last: center;
   }
 }
+
+/* Order Details Modal — Mobile Actions Layout Only */
+@media (max-width: 680px) {
+
+  .modal-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .modal-head > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .modal-head > div:last-child .btn {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 40px;
+    height: 40px;
+    padding: 6px 4px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+}
+
+/* =====================================================
+   Mobile Form Fields — All Sections
+   Cargo, Finance, Reports, Orders, Modals
+   Desktop remains unchanged
+   ===================================================== */
+
+@media (max-width: 680px) {
+
+  /* Text inputs, dates, dropdowns and textareas */
+  .content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+  .content select:not(.compact-select):not(.more-select),
+  .content textarea,
+  .modal-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+  .modal-card select:not(.compact-select):not(.more-select),
+  .modal-card textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+    padding: 13px 15px !important;
+    font-size: 16px !important;
+    line-height: 1.4;
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Multiline fields such as address and notes */
+  .content textarea,
+  .modal-card textarea {
+    min-height: 120px;
+    padding: 14px 15px !important;
+  }
+
+  /* Date fields */
+  .content input[type="date"],
+  .modal-card input[type="date"] {
+    min-height: 52px;
+  }
+
+  /* Comfortable spacing between label and field */
+  .content label,
+  .modal-card label {
+    gap: 9px;
+  }
+
+}
