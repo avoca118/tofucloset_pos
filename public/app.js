@@ -2956,6 +2956,7 @@ document.addEventListener("click", async (event) => {
     if (action === "open-receipt") openReceipt(orderById(target.dataset.id));
     if (action === "print-receipt") window.print();
 
+    
     if (action === "save-receipt-png") {
       const receipt = document.querySelector("#modal-root .receipt");
 
@@ -2964,22 +2965,63 @@ document.addEventListener("click", async (event) => {
         return;
       }
 
-      html2canvas(receipt, {
-        backgroundColor: "#ffffff",
-        scale: Math.max(4, window.devicePixelRatio * 4),
-        useCORS: true,
-        logging: false
-      }).then((canvas) => {
-        const link = document.createElement("a");
-        const order = orderById(
-          target.closest("[data-action]")?.dataset.id
-        );
+      const button = target.closest("[data-action]");
+      const order = orderById(button?.dataset.id);
 
-        link.download = `${order?.orderNumber || "receipt"}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      });
+      (async () => {
+        try {
+          // Wait for fonts and images before capturing the receipt.
+          if (document.fonts?.ready) {
+            await document.fonts.ready;
+          }
+
+          const images = [...receipt.querySelectorAll("img")];
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete) {
+                return img.decode?.().catch(() => {});
+              }
+
+              return new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve;
+              });
+            })
+          );
+
+          const width = Math.ceil(receipt.scrollWidth);
+          const height = Math.ceil(receipt.scrollHeight);
+
+          const canvas = await html2canvas(receipt, {
+            backgroundColor: "#ffffff",
+            scale: 4,
+            width,
+            height,
+            windowWidth: Math.max(
+              document.documentElement.clientWidth,
+              width
+            ),
+            windowHeight: Math.max(
+              document.documentElement.clientHeight,
+              height
+            ),
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0
+          });
+
+          const link = document.createElement("a");
+          link.download = `${order?.orderNumber || "receipt"}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        } catch (error) {
+          console.error("Receipt PNG export failed:", error);
+          alert("Could not save the receipt image. Please try again.");
+        }
+      })();
     }
+
     if (action === "add-line") {
       document.getElementById("line-items").insertAdjacentHTML(
         "beforeend",
