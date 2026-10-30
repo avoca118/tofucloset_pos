@@ -2537,7 +2537,7 @@ function openOrderDetails(order) {
     })
     .join("");
   const payments = orderPayments(order.id)
-    .map((payment) => `<div class="timeline-item"><strong>${esc(String(payment.paymentDate || "").slice(0, 10))} · Payment · ${money(payment.amount)}</strong><div class="muted tiny">${esc(payment.method)} · ${esc(payment.note || "")}</div></div>`)
+    .map((payment) => `<div class="timeline-item"><strong>${esc(String(order.orderDate || "").slice(0, 10))} · Payment · ${money(payment.amount)}</strong><div class="muted tiny">${esc(payment.method)} · ${esc(payment.note || "")}</div></div>`)
     .join("");
   const refunds = orderRefunds(order.id)
     .map((refund) => `<div class="timeline-item"><strong>${esc(refund.refundDate)} · Refund · ${money(refund.amount)}</strong><div class="muted tiny">${esc(refund.method)} · ${esc(refund.reason || "")}</div></div>`)
@@ -2634,7 +2634,7 @@ function openReceipt(order) {
     .join("");
   const payments = state.data.payments
     .filter((payment) => payment.orderId === order.id)
-    .map((payment) => `<div>${esc(String(payment.paymentDate || "").slice(0, 10))} · ${esc(payment.method)} · ${money(payment.amount)}</div>`)
+    .map((payment) => `<div>${esc(String(order.orderDate || "").slice(0, 10))} · ${esc(payment.method)} · ${money(payment.amount)}</div>`)
     .join("");
   showModal(`
     <div class="modal-head no-print">
