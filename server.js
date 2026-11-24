@@ -850,6 +850,7 @@ function createOrder(db, input, user) {
       ...item,
       orderDate,
       orderType: input.orderType || "Preorder",
+      platform: input.platform || "",
       waitingTime
     })
   );
@@ -866,6 +867,7 @@ function createOrder(db, input, user) {
     customerId: customer.id,
     createdBy: user.id,
     orderType: input.orderType || "Preorder",
+    platform: input.platform || "",
     status: input.status || "Pending Confirmation",
     preorderStatus: input.preorderStatus || "Pending Confirmation",
     packingStatus: input.packingStatus || "To Pack",
@@ -949,6 +951,7 @@ function updateOrder(db, orderId, input, user) {
   const editable = [
     "orderDate",
     "orderType",
+    "platform",
     "status",
     "preorderStatus",
     "packingStatus",

@@ -2548,7 +2548,15 @@ function openOrderDetails(order) {
   const deliveryNote = deliveryPaymentNote(order.deliveryMethod);
   showModal(`
     <div class="modal-head">
-      <div><h3>${esc(order.orderNumber)}</h3><p class="muted tiny">${esc(order.orderType)} · ${esc(displayDateOnly(order.orderDate))} · Expected ${esc(displayDateOnly(order.expectedArrival || ""))}</p></div>
+      <div>
+        <h3>${esc(order.orderNumber)}</h3>
+        <p class="muted tiny">
+          ${esc(order.orderType)}
+          ${order.platform ? ` · ${esc(order.platform)}` : ""}
+          · ${esc(displayDateOnly(order.orderDate))}
+          · Expected ${esc(displayDateOnly(order.expectedArrival || ""))}
+        </p>
+      </div>
       <div class="toolbar">
         <button class="btn small secondary" data-action="open-order" data-id="${order.id}">Edit</button>
         <button class="btn small secondary" data-action="open-payment" data-id="${order.id}">Payment</button>
